@@ -63,6 +63,7 @@ import org.xml.sax.InputSource;
 import org.xml.sax.SAXNotRecognizedException;
 import org.xml.sax.SAXNotSupportedException;
 import org.xml.sax.XMLReader;
+import ypscraper.YPScraper;
 
 public class YPPageScraper extends DefaultBoundedRangeModel implements Runnable {
 
@@ -171,7 +172,7 @@ public class YPPageScraper extends DefaultBoundedRangeModel implements Runnable 
 
     private String url;
     private File outputDirectory;
-    private FrameMain frameMain;
+    private YPScraper frameMain;
 
     private URL currentUrl;
     private int currentPage = 1;
@@ -242,8 +243,7 @@ public class YPPageScraper extends DefaultBoundedRangeModel implements Runnable 
                     if (blockedProxyUri.getScheme() == null) {
                         blockedProxyUri = new URI("tcp:/" + blockedProxyAddress);
                     }
-                    frameMain.getProxies().remove(
-                            new Proxy(Proxy.Type.SOCKS, new InetSocketAddress(blockedProxyUri.getHost(), blockedProxyUri.getPort())));
+                    
                 } catch (Exception e) {
                     log.error("Failed to restore the 'scraper.blockedProxies' property: " + blockedProxyAddress, e);
                 }
@@ -345,7 +345,7 @@ public class YPPageScraper extends DefaultBoundedRangeModel implements Runnable 
         }
     }
 
-    public YPPageScraper(FrameMain frameMain) {
+    public YPPageScraper(YPScraper frameMain) {
         super();
         this.frameMain = frameMain;
         outputDirectory = frameMain.getOutputDirectory();
@@ -406,11 +406,11 @@ public class YPPageScraper extends DefaultBoundedRangeModel implements Runnable 
                 
                 Document doc = (Document) Jsoup.connect("https://www.yellowpages.ca/search/si/1/fashion%20retailer/ON").get();
                 
-                getActionCancel().setHttpGet(httpGet);
-                HttpResponse response = httpClient.execute(httpGet);
-                futureConnectionCloseTask
-                        = getTimeoutService().schedule(getConnectionCloseTask().setHttpGet(httpGet), frameMain.getParseTimeout(), TimeUnit.SECONDS);
-                HttpEntity entity = response.getEntity();
+//                getActionCancel().setHttpGet(httpGet);
+//                HttpResponse response = httpClient.execute(httpGet);
+//                futureConnectionCloseTask
+//                        = getTimeoutService().schedule(getConnectionCloseTask().setHttpGet(httpGet), frameMain.getParseTimeout(), TimeUnit.SECONDS);
+                HttpEntity entity = null; //response.getEntity();
                 if (currentProxy == null) {
                     frameMain.getPanelMain().getTextFieldStatus()
                             .setText("Parsing page: " // + currentPage + "/" + currentLocationIndex + "/" + currentPostalCodeIndex 
@@ -438,7 +438,7 @@ public class YPPageScraper extends DefaultBoundedRangeModel implements Runnable 
 //	, new StreamResult(System.out));
                 getActionCancel().setHttpGet(null);
                 futureConnectionCloseTask.cancel(true);
-                currentUrl = httpGet.getURI().toURL();
+                currentUrl = null;
                 XPath xpath = XPathFactory.newInstance().newXPath();
                 PagingInfo pagingInfo
                         = new PagingInfo(xpath, domResult.getNode());
@@ -805,29 +805,6 @@ public class YPPageScraper extends DefaultBoundedRangeModel implements Runnable 
             shutdownStateProperties = new Properties();
         }
         return shutdownStateProperties;
-    }
-
-    private void currentProxyBlocked() {
-        if (frameMain.useProxies()) {
-            log.error("Removing a blacklisted proxy: " + currentProxy.address());
-            frameMain.getProxies().remove(currentProxy);
-            if (getBlockedProxies().length() < 1) {
-                getBlockedProxies().append(currentProxy.address().toString());
-            } else {
-                getBlockedProxies().append(';').append(currentProxy.address().toString());
-            }
-            persist();
-            if (frameMain.getProxies().size() < 1) {
-                log.error("No more life proxies available");
-                currentStatusString = "Scraping blocked by the site";
-                isLastPage = true;
-            } else {
-                reschedule("Scraping page " + totalPagesScraped + " re-scheduled");
-            }
-        } else {
-            currentStatusString = "Scraping blocked by the site";
-            isLastPage = true;
-        }
     }
 
     private StringBuffer getBlockedProxies() {

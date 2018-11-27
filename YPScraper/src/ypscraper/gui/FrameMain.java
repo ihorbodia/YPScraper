@@ -154,10 +154,10 @@ public class FrameMain extends JFrame {
 		@Override
 		public void actionPerformed(ActionEvent e) {
 		    if(FrameMain.this.getPanelMain().hasBusinessSpecified()) {
-				getScheduledExecutorService().schedule(
-					  new YPPageScraper(FrameMain.this)
-					, 0
-					, TimeUnit.SECONDS);
+//				getScheduledExecutorService().schedule(
+//					  new YPPageScraper(FrameMain.this)
+//					, 0
+//					, TimeUnit.SECONDS);
 		    	FrameMain.this.getPanelMain().getTextFieldStatus()
 	    			.setText("Started searching");
 		    	FrameMain.this.setStarted();
@@ -360,7 +360,7 @@ public class FrameMain extends JFrame {
 				log.error("Failed to restore the 'frameMain.parseTimeout' property", e);
 			}
 			getPanelMain().init(shutdownStateProperties);
-			YPPageScraper ypScraper = new YPPageScraper(this);
+			YPPageScraper ypScraper = null;// new YPPageScraper(this);
 			ypScraper.init(shutdownStateProperties);
 			// Restore the progress bar (maintained by the YPPageScraper when run)
 			getPanelMain().getProgressBar().setModel(ypScraper);
