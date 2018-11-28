@@ -40,19 +40,19 @@ public class YPScraper extends JFrame {
     private JButton btnStop;
     private JButton btnCancel;
     
+    YPScraperLogic logic;
+    
     public Properties properties = new Properties();
 
     public class StartAction implements ActionListener {
-
         public StartAction() {
-
         }
 
         @Override
         public void actionPerformed(ActionEvent e) {
             System.out.println("Start");
-            try {
-                YPScraperLogic logic = new YPScraperLogic(YPScraper.this);
+             try {
+                logic.Run();
             } catch (IOException ex) {
                 Logger.getLogger(YPScraper.class.getName()).log(Level.SEVERE, null, ex);
             } catch (InterruptedException ex) {
@@ -107,6 +107,18 @@ public class YPScraper extends JFrame {
         getBtnStop().addActionListener(new StopAction());
         getBtnCancel().addActionListener(new CancelAction());
     }
+    
+    private void initLogic() {
+        try {
+            logic = new YPScraperLogic(YPScraper.this);
+        } catch (IOException ex) {
+            Logger.getLogger(YPScraper.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (InterruptedException ex) {
+            Logger.getLogger(YPScraper.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (ExecutionException ex) {
+            Logger.getLogger(YPScraper.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
 
     public YPScraper() {
         setTitle("YP Crawler CA");
@@ -114,6 +126,7 @@ public class YPScraper extends JFrame {
         setBounds(100, 100, 450, 300);
         add(PanelMain());
         setContentPane(PanelMain());
+        initLogic();
         initActions();
     }
 
