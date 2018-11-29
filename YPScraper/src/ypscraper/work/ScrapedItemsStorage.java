@@ -13,17 +13,16 @@ import java.util.ArrayList;
  */
 public class ScrapedItemsStorage {
     
-    public ArrayList<ScrapedItems> List;
+    public ArrayList<ScrapedItem> List;
+    public String businessName;
+    public String locationName;
     
-    public class ScrapedItems {
-        public String Name;
-        public String Address;
-        public String Link;
-    }
-    
-    public ScrapedItemsStorage() {
-        List = new ArrayList<ScrapedItems>();
+    public ScrapedItemsStorage(String businessName, String locationName) {
+        this.businessName = businessName;
+        this.locationName = locationName;
+        List = new ArrayList<ScrapedItem>();
     }
 }
+    
 
 

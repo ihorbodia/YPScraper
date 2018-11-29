@@ -20,10 +20,10 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.swing.text.Element;
 import org.apache.commons.io.FilenameUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import ypscraper.YPScraper;
 
@@ -39,11 +39,13 @@ public class YPScraperLogic {
     private int currentProvinceIndex;
     private int pagesCount;
     private String CABaseURLPart = "https://www.yellowpages.ca/search/si";
+    private String CAMainURL = "https://www.yellowpages.ca";
     private String province;
     String separator = File.separator;
     ExecutorService executorService;
     int connectionTimeout;
     File propertiesFile;
+    ScrapedItemsStorage storage;
 
     String firstPage;
     InputStream input = null;
@@ -138,55 +140,70 @@ public class YPScraperLogic {
         connectionTimeout = (Integer) parent.getTextFieldConnectionTimeout().getValue();
         province = parent.getTextFieldLocation().getText();
         saveProperties();
-
+        storage = new ScrapedItemsStorage(business, province);
         executorService = Executors.newSingleThreadExecutor();
-        Future future = executorService.submit(new Runnable() {
-            
+        executorService.execute(new Runnable() {
             boolean continueWork = true;
             public void run() {
                 while (continueWork) {
                     try {
                         Thread.sleep(connectionTimeout);
-                        
                         currentURL = prepareFirstURL();
-                        Document doc = Jsoup.connect(currentURL).get();
                         int pages = countPages();
                         for (int i = 2; i <= pages; i++) {
-                            scrapePage(prepareURL(i));
+                            Document doc = scrapePage(prepareURL(i));
+                            parseCurrentPage(doc);
                         }
-                        Elements el1 = doc.select("#ypgBody > div.page__container.jsTabsContent.margin-top-20.page__container--right-sidebar.hasMap > div > div.page__content.jsListingMerchantCards.jsListContainer > div.resultList.jsResultsList.jsMLRContainer > div > div:nth-child(1) > div > div.listing__content__wrapper > div.listing__content__wrap--flexed > div.listing__right.hasIcon > div.listing__title--wrap > h3 > a");
-                        Elements el2 = doc.select("#ypgBody > div.page__container.jsTabsContent.margin-top-20.page__container--right-sidebar.hasMap > div > div.page__content.jsListingMerchantCards.jsListContainer > div.resultList.jsResultsList.jsMLRContainer > div > div:nth-child(2) > div > div.listing__content__wrapper > div.listing__content__wrap--flexed > div.listing__right.hasIcon > div.listing__title--wrap > h3 > a");
-                        System.out.println(el1.html());
-                        System.out.println(el2.html());
                     } catch (InterruptedException ex) {
-                        Logger.getLogger(YPScraperLogic.class.getName()).log(Level.SEVERE, null, ex);
-                    } catch (IOException ex) {
                         Logger.getLogger(YPScraperLogic.class.getName()).log(Level.SEVERE, null, ex);
                     }
                 }
             }
         });
 
-        future.get();
     }
     
-    private void scrapePage(String URL) {
-        //Elements el1 = doc.select("#ypgBody > div.page__container.jsTabsContent.margin-top-20.page__container--right-sidebar.hasMap > div > div.page__content.jsListingMerchantCards.jsListContainer > div.resultList.jsResultsList.jsMLRContainer > div > div:nth-child(1) > div > div.listing__content__wrapper > div.listing__content__wrap--flexed > div.listing__right.hasIcon > div.listing__title--wrap > h3 > a");
-        //Elements el2 = doc.select("#ypgBody > div.page__container.jsTabsContent.margin-top-20.page__container--right-sidebar.hasMap > div > div.page__content.jsListingMerchantCards.jsListContainer > div.resultList.jsResultsList.jsMLRContainer > div > div:nth-child(2) > div > div.listing__content__wrapper > div.listing__content__wrap--flexed > div.listing__right.hasIcon > div.listing__title--wrap > h3 > a");
-        //System.out.println(el1.html());
-        //System.out.println(el2.html());
-        
+    private void parseCurrentPage(Document doc) {
+        if (doc == null) {
+            return;
+        }
+        int itemIndex = 2;
+        boolean continueWork = true;
+        while (continueWork) {
+            String nameSelector = "#ypgBody > div.page__container.jsTabsContent.margin-top-20.page__container--right-sidebar.hasMap > div > div.page__content.jsListingMerchantCards.jsListContainer > div.resultList.jsResultsList.jsMLRContainer > div > div:nth-child("+itemIndex+") > div > div.listing__content__wrapper > div.listing__content__wrap--flexed > div.listing__right.hasIcon > div.listing__title--wrap > h3 > a";
+            String addressSelector = "#ypgBody > div.page__container.jsTabsContent.margin-top-20.page__container--right-sidebar.hasMap > div > div.page__content.jsListingMerchantCards.jsListContainer > div.resultList.jsResultsList.jsMLRContainer > div > div:nth-child("+itemIndex+") > div > div.listing__content__wrapper > div.listing__content__wrap--flexed > div.listing__right.hasIcon > div.listing__address.address.mainLocal.noNum > span";
+            String webPageSelector = "#ypgBody > div.page__container.jsTabsContent.margin-top-20.page__container--right-sidebar.hasMap > div > div.page__content.jsListingMerchantCards.jsListContainer > div.resultList.jsResultsList.jsMLRContainer > div > div:nth-child("+itemIndex+") > div > div.listing__mlr__root > ul > li.mlr__item.mlr__item--website > a";
+
+            String name = doc.select(nameSelector).first().text();
+            String address = scrapeAddress(doc.select(addressSelector));
+            String link = scrapeLink(doc.select(webPageSelector));
+            if (name == null) {
+                continueWork = false;
+                break;
+            }
+            storage.List.add(new ScrapedItem(name, address, link));
+            itemIndex++;
+        }
+    }
+    
+    private String scrapeAddress(Elements elements) {
+        String resultString = elements.first().text();
+        return resultString;
+    }
+    
+    private String scrapeLink(Elements elements){
+        String resultString = CAMainURL + elements.attr("href");
+        return resultString;
+    }
+    
+    private Document scrapePage(String URL) {
         Document doc = null;
         try {
             doc = Jsoup.connect(URL).get();
         } catch (IOException ex) {
             Logger.getLogger(YPScraperLogic.class.getName()).log(Level.SEVERE, null, ex);
         }
-        if (doc == null) {
-            return;
-        }
-        String countSelector = "#ypgBody > div.page__container.jsTabsContent.margin-top-20.page__container--right-sidebar.hasMap > div > div.page__content.jsListingMerchantCards.jsListContainer > div.contentControls.listing-summary > div.contentControls__left > h1 > span > strong";
-        String count = doc.select(countSelector).first().html();
+        return doc;
     }
 
     private int countPages() {
@@ -207,6 +224,8 @@ public class YPScraperLogic {
         
         float floatPages = (float) (fcount / 40.0);
         int intPages = icount / 40;
+        
+        parseCurrentPage(doc);
         
         if (floatPages > intPages) {
             return intPages + 1;
