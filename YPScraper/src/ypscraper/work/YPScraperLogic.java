@@ -45,6 +45,7 @@ public class YPScraperLogic {
     int connectionTimeout;
     File propertiesFile;
 
+    String firstPage;
     InputStream input = null;
     OutputStream output = null;
     private YPScraper parent;
@@ -140,13 +141,19 @@ public class YPScraperLogic {
 
         executorService = Executors.newSingleThreadExecutor();
         Future future = executorService.submit(new Runnable() {
+            
+            boolean continueWork = true;
             public void run() {
-                while (true) {
+                while (continueWork) {
                     try {
                         Thread.sleep(connectionTimeout);
+                        
                         currentURL = prepareFirstURL();
                         Document doc = Jsoup.connect(currentURL).get();
-                        scrapePage(doc);
+                        int pages = countPages();
+                        for (int i = 2; i <= pages; i++) {
+                            scrapePage(prepareURL(i));
+                        }
                         Elements el1 = doc.select("#ypgBody > div.page__container.jsTabsContent.margin-top-20.page__container--right-sidebar.hasMap > div > div.page__content.jsListingMerchantCards.jsListContainer > div.resultList.jsResultsList.jsMLRContainer > div > div:nth-child(1) > div > div.listing__content__wrapper > div.listing__content__wrap--flexed > div.listing__right.hasIcon > div.listing__title--wrap > h3 > a");
                         Elements el2 = doc.select("#ypgBody > div.page__container.jsTabsContent.margin-top-20.page__container--right-sidebar.hasMap > div > div.page__content.jsListingMerchantCards.jsListContainer > div.resultList.jsResultsList.jsMLRContainer > div > div:nth-child(2) > div > div.listing__content__wrapper > div.listing__content__wrap--flexed > div.listing__right.hasIcon > div.listing__title--wrap > h3 > a");
                         System.out.println(el1.html());
@@ -163,16 +170,50 @@ public class YPScraperLogic {
         future.get();
     }
     
-    private void scrapePage(Document doc) {
-        Elements el1 = doc.select("#ypgBody > div.page__container.jsTabsContent.margin-top-20.page__container--right-sidebar.hasMap > div > div.page__content.jsListingMerchantCards.jsListContainer > div.resultList.jsResultsList.jsMLRContainer > div > div:nth-child(1) > div > div.listing__content__wrapper > div.listing__content__wrap--flexed > div.listing__right.hasIcon > div.listing__title--wrap > h3 > a");
-        Elements el2 = doc.select("#ypgBody > div.page__container.jsTabsContent.margin-top-20.page__container--right-sidebar.hasMap > div > div.page__content.jsListingMerchantCards.jsListContainer > div.resultList.jsResultsList.jsMLRContainer > div > div:nth-child(2) > div > div.listing__content__wrapper > div.listing__content__wrap--flexed > div.listing__right.hasIcon > div.listing__title--wrap > h3 > a");
-        System.out.println(el1.html());
-        System.out.println(el2.html());
+    private void scrapePage(String URL) {
+        //Elements el1 = doc.select("#ypgBody > div.page__container.jsTabsContent.margin-top-20.page__container--right-sidebar.hasMap > div > div.page__content.jsListingMerchantCards.jsListContainer > div.resultList.jsResultsList.jsMLRContainer > div > div:nth-child(1) > div > div.listing__content__wrapper > div.listing__content__wrap--flexed > div.listing__right.hasIcon > div.listing__title--wrap > h3 > a");
+        //Elements el2 = doc.select("#ypgBody > div.page__container.jsTabsContent.margin-top-20.page__container--right-sidebar.hasMap > div > div.page__content.jsListingMerchantCards.jsListContainer > div.resultList.jsResultsList.jsMLRContainer > div > div:nth-child(2) > div > div.listing__content__wrapper > div.listing__content__wrap--flexed > div.listing__right.hasIcon > div.listing__title--wrap > h3 > a");
+        //System.out.println(el1.html());
+        //System.out.println(el2.html());
+        
+        Document doc = null;
+        try {
+            doc = Jsoup.connect(URL).get();
+        } catch (IOException ex) {
+            Logger.getLogger(YPScraperLogic.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        if (doc == null) {
+            return;
+        }
+        String countSelector = "#ypgBody > div.page__container.jsTabsContent.margin-top-20.page__container--right-sidebar.hasMap > div > div.page__content.jsListingMerchantCards.jsListContainer > div.contentControls.listing-summary > div.contentControls__left > h1 > span > strong";
+        String count = doc.select(countSelector).first().html();
     }
 
     private int countPages() {
-
-        return 0;
+        Document doc = null;
+        try {
+            doc = Jsoup.connect(prepareFirstURL()).get();
+        } catch (IOException ex) {
+            Logger.getLogger(YPScraperLogic.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        if (doc == null) {
+            return 0;
+        }
+        String countSelector = "#ypgBody > div.page__container.jsTabsContent.margin-top-20.page__container--right-sidebar.hasMap > div > div.page__content.jsListingMerchantCards.jsListContainer > div.contentControls.listing-summary > div.contentControls__left > h1 > span > strong";
+        String count = doc.select(countSelector).first().html();
+        
+        float fcount = Float.parseFloat(count);
+        int icount = Integer.parseInt(count);
+        
+        float floatPages = (float) (fcount / 40.0);
+        int intPages = icount / 40;
+        
+        if (floatPages > intPages) {
+            return intPages + 1;
+        }
+        else {
+            return intPages;
+        }
     }
 
     private String prepareFirstURL() {
@@ -194,13 +235,22 @@ public class YPScraperLogic {
         return url;
     }
 
-    private String prepareURL() {
+    private String prepareURL(int pageNumber) {
         String url;
         String[] splited = business.split("\\s+");
-        url = CABaseURLPart;
-        for (int i = 0; i < splited.length; i++) {
-            url = CABaseURLPart + "page" + "";
+        url = CABaseURLPart + "/" + pageNumber + "/";
+        if (splited.length > 1) {
+            for (int i = 0; i < splited.length; i++) {
+                url += splited[i];
+                if (i < splited.length - 1) {
+                    url += "%20";
+                }
+            }
+        } else {
+            url = splited[0];
         }
+        url += "/" + province;
+
         return url;
     }
 }
