@@ -13,6 +13,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
+import java.io.UnsupportedEncodingException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -43,6 +44,7 @@ public class YPScraperLogic {
     private String CABaseURLPart = "https://www.yellowpages.ca/search/si";
     private String CAMainURL = "https://www.yellowpages.ca";
     private String province;
+    private int itemsCount;
     String separator = File.separator;
     ExecutorService executorService;
     int connectionTimeout;
@@ -96,7 +98,9 @@ public class YPScraperLogic {
         try {
             output = new FileOutputStream(propertiesFile.getAbsoluteFile());
             parent.properties.setProperty("business", business);
-            parent.properties.setProperty("province", province);
+            if (!isMultipleSearch) {
+                parent.properties.setProperty("province", province);
+            }
             parent.properties.setProperty("connTimeout", Integer.toString(connectionTimeout));
             parent.properties.setProperty("outputFolder", parent.getlblOutputPathData().getText());
             parent.properties.store(output, null);
@@ -148,7 +152,7 @@ public class YPScraperLogic {
         business = parent.getTextFieldBusiness().getText();
         connectionTimeout = (Integer) parent.getTextFieldConnectionTimeout().getValue();
         province = parent.getTextFieldLocation().getText();
-        saveProperties();
+
         storage = new ScrapedItemsStorage(business, province);
         executorService = Executors.newSingleThreadExecutor();
         future = executorService.submit(new Runnable() {
@@ -158,33 +162,39 @@ public class YPScraperLogic {
                 try {
                     if (!province.equalsIgnoreCase("")) {
                         isMultipleSearch = false;
-                        currentURL = prepareURL(currentPageNumber);
+                        saveProperties();
+                        prepareURL(currentPageNumber);
                         int pages = countPages();
                         for (int i = 2; i <= pages; i++) {
                             Thread.sleep(connectionTimeout);
-                            Document doc = scrapePage(prepareURL(i));
+                            prepareURL(i);
+                            Document doc = scrapePage(currentURL);
                             parseCurrentPage(doc);
                         }
+                        itemsCount = 0;
                         saveDataToFile();
                     } else {
                         currentProvinceIndex = 0;
                         isMultipleSearch = true;
+                        saveProperties();
                         while (continueWork || currentProvinceIndex < 13) {
-                            currentURL = prepareURL(currentPageNumber);
+                            prepareURL(currentPageNumber);
                             saveProperties();
                             int pages = countPages();
                             for (int i = 2; i <= pages; i++) {
                                 Thread.sleep(connectionTimeout);
-                                Document doc = scrapePage(prepareURL(i));
+                                prepareURL(i);
+                                Document doc = scrapePage(currentURL);
                                 parseCurrentPage(doc);
                             }
                             saveDataToFile();
                             storage.List.clear();
+                            itemsCount = 0;
                             currentProvinceIndex++;
                         }
                     }
-                    //TODO: Cancel search
                     //TODO: Run search if application have been closed and opened again
+                    //TODO: Format CSV
                 } catch (InterruptedException ex) {
                     Logger.getLogger(YPScraperLogic.class.getName()).log(Level.SEVERE, null, ex);
                 }
@@ -204,7 +214,6 @@ public class YPScraperLogic {
             }
         };
         thread.start();
-
     }
 
     private void parseCurrentPage(Document doc) {
@@ -217,23 +226,68 @@ public class YPScraperLogic {
         try {
             Element item;
             while (continueWork) {
-                String itemSelector = "#ypgBody > div.page__container.jsTabsContent.margin-top-20.page__container--right-sidebar.hasMap > div > div.page__content.jsListingMerchantCards.jsListContainer > div.resultList.jsResultsList.jsMLRContainer > div > div:nth-child(" + itemIndex + ") > div > div.listing__content__wrapper > div.listing__content__wrap--flexed";
+                item = getItemOnPage(doc, itemIndex);
                 String webSiteItemSelector = "#ypgBody > div.page__container.jsTabsContent.margin-top-20.page__container--right-sidebar.hasMap > div > div.page__content.jsListingMerchantCards.jsListContainer > div.resultList.jsResultsList.jsMLRContainer > div > div:nth-child(" + itemIndex + ") > div > div.listing__mlr__root > ul > li.mlr__item.mlr__item--website > a";
-                item = doc.select(itemSelector).first();
                 if (item == null) {
-                    continueWork = false;
-                    break;
+                    if (itemIndex > 40 || storage.List.size() == itemsCount) {
+                        break;
+                    }
+                    itemIndex++;
+                    continue;
                 }
-                Element titleElement = (Element) item.childNode(3).childNode(1).childNode(1).childNode(1);
-                String title = titleElement.text();
+                String title = processTitle(item);  
                 String address = scrapeAddress(item);
                 String link = scrapeLink(doc.select(webSiteItemSelector));
                 itemIndex++;
-                storage.List.add(new ScrapedItem(title, address, link));
+                storage.List.add(new ScrapedItem(title, address.replace("Get directions", ""), processLink(link)));
+                System.out.println(storage.List.size());
             }
         } catch (Exception ex) {
             Logger.getLogger(YPScraperLogic.class.getName()).log(Level.SEVERE, null, ex);
         }
+    }
+    
+    private String processTitle(Element item) {
+        String result = "";
+        Element titleElement = (Element) item.childNode(3).childNode(1).childNode(1).childNode(1);
+        if (titleElement.text().equalsIgnoreCase("")) {
+            titleElement = (Element) item.childNode(3).childNode(1).childNode(1);
+            result = titleElement.attr("title");
+            return result;
+        }
+        int size = titleElement.text().length();
+        if (size == 1) {
+            titleElement = (Element) item.childNode(3).childNode(1).childNode(1).childNode(3);
+            result = titleElement.text();
+            return result;
+        }
+        return result;
+    }
+    
+    private String processLink(String link){
+        String result = ""; 
+        if (link == null) {
+            return result;
+        }
+        try {
+            String res = java.net.URLDecoder.decode(link, "UTF-8");
+            result = res.substring(res.indexOf("=") + 1);
+        } catch (UnsupportedEncodingException ex) {
+            Logger.getLogger(YPScraperLogic.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        return result;
+    }
+    
+    private Element getItemOnPage(Document doc, int itemIndex) {
+        Element item;
+        String itemSelector = "#ypgBody > div.page__container.jsTabsContent.margin-top-20.page__container--right-sidebar.hasMap > div > div.page__content.jsListingMerchantCards.jsListContainer > div.resultList.jsResultsList.jsMLRContainer > div > div:nth-child(" + itemIndex + ") > div > div.listing__content__wrapper > div.listing__content__wrap--flexed";
+        String secondItemSelector = "#ypgBody > div.page__container.jsTabsContent.page__container--right-sidebar.hasMap.margin-top-20 > div > div.page__content.jsListingMerchantCards.jsListContainer > div.resultList.jsResultsList.jsMLRContainer > div:nth-child(2) > div:nth-child(" + itemIndex + ") > div > div.listing__content__wrapper > div.listing__content__wrap--flexed";
+        item = doc.select(itemSelector).first();
+        if (item == null) {
+            item = doc.select(secondItemSelector).first();
+        }
+
+        return item;
     }
 
     private String scrapeAddress(Element element) {
@@ -249,14 +303,16 @@ public class YPScraperLogic {
     }
 
     private String scrapeLink(Elements elements) {
-        String resultString = CAMainURL + elements.attr("href");
+        String resultString = elements.attr("href");
         return resultString;
     }
 
     private Document scrapePage(String URL) {
         Document doc = null;
         try {
-            doc = Jsoup.connect(URL).get();
+            doc = Jsoup.connect(URL)
+                    .userAgent("Mozilla/5.0 (Windows; U; WindowsNT 5.1; en-US; rv1.8.1.6) Gecko/20070725 Firefox/2.0.0.6")
+                    .referrer(CAMainURL).get();
         } catch (IOException ex) {
             Logger.getLogger(YPScraperLogic.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -274,10 +330,11 @@ public class YPScraperLogic {
             return 0;
         }
         String countSelector = "#ypgBody > div.page__container.jsTabsContent.margin-top-20.page__container--right-sidebar.hasMap > div > div.page__content.jsListingMerchantCards.jsListContainer > div.contentControls.listing-summary > div.contentControls__left > h1 > span > strong";
-        String count = doc.select(countSelector).first().html();
+        String count = doc.select(countSelector).first().html().replace(",", "");
 
         float fcount = Float.parseFloat(count);
         int icount = Integer.parseInt(count);
+        itemsCount = icount;
 
         float floatPages = (float) (fcount / 40.0);
         int intPages = icount / 40;
@@ -291,7 +348,7 @@ public class YPScraperLogic {
         }
     }
 
-    private String prepareURL(int pageNumber) {
+    private void prepareURL(int pageNumber) {
         String url;
         String[] splited = business.split("\\s+");
         url = CABaseURLPart + "/" + pageNumber + "/";
@@ -299,7 +356,7 @@ public class YPScraperLogic {
             for (int i = 0; i < splited.length; i++) {
                 url += splited[i];
                 if (i < splited.length - 1) {
-                    url += "%20";
+                    url += "%2B";
                 }
             }
         } else {
@@ -311,26 +368,26 @@ public class YPScraperLogic {
         } else {
             url += "/" + province;
         }
-        return url;
+        currentURL = url;
     }
 
     private void saveDataToFile() {
         StringBuilder sb = new StringBuilder();
         //Headers
-        sb.append("Name");
-        sb.append(';');
-        sb.append("Address");
-        sb.append(';');
         sb.append("Link");
+        sb.append(',');
+        sb.append("Name");
+        sb.append(',');
+        sb.append("Address");
         sb.append('\n');
 
         //Data
         for (int i = 0; i < storage.List.size(); i++) {
-            sb.append(storage.List.get(i).Name);
-            sb.append(';');
-            sb.append(storage.List.get(i).Address);
-            sb.append(';');
             sb.append(storage.List.get(i).Link);
+            sb.append(',');
+            sb.append(storage.List.get(i).Name);
+            sb.append(',');
+            sb.append("\""+storage.List.get(i).Address+"\"");
             sb.append('\n');
         }
         try {
