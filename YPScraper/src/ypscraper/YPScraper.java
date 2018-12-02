@@ -48,14 +48,17 @@ public class YPScraper extends JFrame {
     public Properties properties = new Properties();
 
     public class StartAction implements ActionListener {
+
         public StartAction() {
         }
 
         @Override
         public void actionPerformed(ActionEvent e) {
             System.out.println("Start");
-             try {
+            try {
                 logic.Run();
+                getBtnStop().setEnabled(true);
+                getBtnStart().setEnabled(false);
             } catch (IOException ex) {
                 Logger.getLogger(YPScraper.class.getName()).log(Level.SEVERE, null, ex);
             } catch (InterruptedException ex) {
@@ -67,6 +70,7 @@ public class YPScraper extends JFrame {
     }
     
     public class SetOutputPathAction implements ActionListener {
+
         public SetOutputPathAction() {
         }
 
@@ -82,22 +86,32 @@ public class YPScraper extends JFrame {
     }
 
     public class StopAction implements ActionListener {
+
         public StopAction() {
+
         }
 
         @Override
         public void actionPerformed(ActionEvent e) {
             System.out.println("Stop");
+            if (logic != null && logic.future != null) {
+                logic.future.cancel(true);
+                getBtnStop().setEnabled(false);
+            }
         }
     }
 
     public class CancelAction implements ActionListener {
+
         public CancelAction() {
         }
 
         @Override
         public void actionPerformed(ActionEvent e) {
-            System.out.println("Cancel");
+            if (logic != null) {
+                logic.future.cancel(true);
+                getBtnStop().setEnabled(false);
+            }
         }
     }
 
@@ -194,8 +208,6 @@ public class YPScraper extends JFrame {
         gbc_textFieldConnTimeout.gridy = 2;
         panel.add(getTextFieldConnectionTimeout(), gbc_textFieldConnTimeout);
 
- 
-
         GridBagConstraints gbc_lblOutputPath = new GridBagConstraints();
         gbc_lblOutputPath.anchor = GridBagConstraints.EAST;
         gbc_lblOutputPath.insets = new Insets(0, 0, 5, 5);
@@ -235,22 +247,22 @@ public class YPScraper extends JFrame {
 
         GridBagConstraints gbc_btnStop = new GridBagConstraints();
         gbc_btnStop.insets = new Insets(0, 0, 0, 5);
-        gbc_btnStop.gridx = 2;
+        gbc_btnStop.gridx = 7;
         gbc_btnStop.gridy = 5;
         panel.add(getBtnStop(), gbc_btnStop);
         
         GridBagConstraints gbc_btnSetOutputFolder = new GridBagConstraints();
         gbc_btnSetOutputFolder.insets = new Insets(0, 0, 0, 5);
-        gbc_btnSetOutputFolder.gridx = 3;
+        gbc_btnSetOutputFolder.gridx = 2;
         gbc_btnSetOutputFolder.gridy = 5;
         panel.add(getBtnOutputPath(), gbc_btnSetOutputFolder);
 
-        GridBagConstraints gbc_btnCancel = new GridBagConstraints();
-        gbc_btnCancel.insets = new Insets(0, 0, 0, 5);
-        gbc_btnCancel.anchor = GridBagConstraints.EAST;
-        gbc_btnCancel.gridx = 7;
-        gbc_btnCancel.gridy = 5;
-        panel.add(getBtnCancel(), gbc_btnCancel);
+//        GridBagConstraints gbc_btnCancel = new GridBagConstraints();
+//        gbc_btnCancel.insets = new Insets(0, 0, 0, 5);
+//        gbc_btnCancel.anchor = GridBagConstraints.EAST;
+//        gbc_btnCancel.gridx = 7;
+//        gbc_btnCancel.gridy = 5;
+//        panel.add(getBtnCancel(), gbc_btnCancel);
         panel.setVisible(true);
         return panel;
     }

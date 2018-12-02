@@ -19,6 +19,7 @@ import java.nio.file.Paths;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.apache.commons.io.FilenameUtils;
@@ -53,6 +54,7 @@ public class YPScraperLogic {
     InputStream input = null;
     OutputStream output = null;
     private YPScraper parent;
+    public Future<?> future;
 
     public YPScraperLogic(YPScraper parent) throws IOException, InterruptedException, ExecutionException {
         this.parent = parent;
@@ -149,11 +151,10 @@ public class YPScraperLogic {
         saveProperties();
         storage = new ScrapedItemsStorage(business, province);
         executorService = Executors.newSingleThreadExecutor();
-        executorService.execute(new Runnable() {
+        future = executorService.submit(new Runnable() {
             boolean continueWork = true;
-
             public void run() {
-
+                currentPageNumber = 1;
                 try {
                     if (!province.equalsIgnoreCase("")) {
                         isMultipleSearch = false;
@@ -165,18 +166,20 @@ public class YPScraperLogic {
                             parseCurrentPage(doc);
                         }
                         saveDataToFile();
-                        currentPageNumber = 1;
                     } else {
+                        currentProvinceIndex = 0;
                         isMultipleSearch = true;
                         while (continueWork || currentProvinceIndex < 13) {
                             currentURL = prepareURL(currentPageNumber);
+                            saveProperties();
                             int pages = countPages();
                             for (int i = 2; i <= pages; i++) {
                                 Thread.sleep(connectionTimeout);
                                 Document doc = scrapePage(prepareURL(i));
                                 parseCurrentPage(doc);
-                                saveDataToFile();
                             }
+                            saveDataToFile();
+                            storage.List.clear();
                             currentProvinceIndex++;
                         }
                     }
@@ -187,10 +190,26 @@ public class YPScraperLogic {
                 }
             }
         });
+        Thread thread = new Thread() {
+            public void run() {
+                while (true) {
+                    if (future.isDone()) {
+                        System.out.println("Return: isDone");
+                        break;
+                    }
+                }
+                parent.getBtnStart().setEnabled(true);
+                parent.getBtnStop().setEnabled(false);
+                parent.getBtnOutputPath().setEnabled(true);
+            }
+        };
+        thread.start();
+
     }
 
     private void parseCurrentPage(Document doc) {
         if (doc == null) {
+            System.out.println("Return: parseCurrentPage");
             return;
         }
         int itemIndex = 1;
@@ -287,7 +306,8 @@ public class YPScraperLogic {
             url = splited[0];
         }
         if (isMultipleSearch) {
-            url += "/" + provinces[currentProvinceIndex];
+            province = provinces[currentProvinceIndex];
+            url += "/" + province;
         } else {
             url += "/" + province;
         }
@@ -308,7 +328,7 @@ public class YPScraperLogic {
         for (int i = 0; i < storage.List.size(); i++) {
             sb.append(storage.List.get(i).Name);
             sb.append(';');
-            sb.append(storage.List.get(i).Address.replace("Get directions", ""));
+            sb.append(storage.List.get(i).Address);
             sb.append(';');
             sb.append(storage.List.get(i).Link);
             sb.append('\n');
