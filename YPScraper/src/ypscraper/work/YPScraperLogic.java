@@ -7,10 +7,15 @@ package ypscraper.work;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.PrintWriter;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -68,6 +73,7 @@ public class YPScraperLogic {
                 parent.properties.setProperty("business", "");
                 parent.properties.setProperty("province", "");
                 parent.properties.setProperty("connTimeout", "0");
+                parent.properties.setProperty("outputFolder", "");
                 parent.properties.store(output, null);
             }
             propertiesFileTemp.delete();
@@ -90,6 +96,7 @@ public class YPScraperLogic {
             parent.properties.setProperty("business", business);
             parent.properties.setProperty("province", province);
             parent.properties.setProperty("connTimeout", Integer.toString(connectionTimeout));
+            parent.properties.setProperty("outputFolder", parent.getlblOutputPathData().getText());
             parent.properties.store(output, null);
         } catch (IOException io) {
             io.printStackTrace();
@@ -119,6 +126,9 @@ public class YPScraperLogic {
             String value = parent.properties.get("connTimeout").toString();
             connectionTimeout = Integer.parseInt(value);
             parent.getTextFieldConnectionTimeout().setValue(connectionTimeout);
+            
+            String path = parent.properties.get("outputFolder").toString();
+            parent.getlblOutputPathData().setText(path);
         } catch (IOException ex) {
             ex.printStackTrace();
         } finally {
@@ -154,6 +164,7 @@ public class YPScraperLogic {
                             Document doc = scrapePage(prepareURL(i));
                             parseCurrentPage(doc);
                         }
+                        saveDataToFile();
                         currentPageNumber = 1;
                     } else {
                         isMultipleSearch = true;
@@ -164,11 +175,11 @@ public class YPScraperLogic {
                                 Thread.sleep(connectionTimeout);
                                 Document doc = scrapePage(prepareURL(i));
                                 parseCurrentPage(doc);
+                                saveDataToFile();
                             }
                             currentProvinceIndex++;
                         }
                     }
-                    //TODO: Save data into CSV file
                     //TODO: Cancel search
                     //TODO: Run search if application have been closed and opened again
                 } catch (InterruptedException ex) {
@@ -281,5 +292,32 @@ public class YPScraperLogic {
             url += "/" + province;
         }
         return url;
+    }
+
+    private void saveDataToFile() {
+        StringBuilder sb = new StringBuilder();
+        //Headers
+        sb.append("Name");
+        sb.append(';');
+        sb.append("Address");
+        sb.append(';');
+        sb.append("Link");
+        sb.append('\n');
+
+        //Data
+        for (int i = 0; i < storage.List.size(); i++) {
+            sb.append(storage.List.get(i).Name);
+            sb.append(';');
+            sb.append(storage.List.get(i).Address.replace("Get directions", ""));
+            sb.append(';');
+            sb.append(storage.List.get(i).Link);
+            sb.append('\n');
+        }
+        try {
+            Path path = Paths.get(parent.getlblOutputPathData().getText() + separator + business.replace(" ", "") + "_" + province + ".csv");
+            Files.write(path, sb.toString().getBytes());
+        } catch (IOException ex) {
+            Logger.getLogger(YPScraperLogic.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }
 }
