@@ -5,18 +5,20 @@
  */
 package ypscraper.work;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
-import java.net.CookieHandler;
-import java.net.CookieManager;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -24,8 +26,6 @@ import java.util.concurrent.Future;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.apache.commons.io.FilenameUtils;
-import org.apache.http.client.HttpClient;
-import org.apache.http.impl.client.DefaultHttpClient;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -38,7 +38,8 @@ import ypscraper.YPScraper;
  */
 public class YPScraperLogic {
 
-    private static String[] provinces = {"AB", "BC", "MB", "NB", "NL", "NT", "NS", "NU", "ON", "PE", "QC", "SK", "YT"};
+    //private static String[] provinces = {"AB", "BC", "MB", "NB", "NL", "NT", "NS", "NU", "ON", "PE", "QC", "SK", "YT"};
+    private String[] postalCodes = null;
     private static String business;
     private String currentURL;
     private int currentPageNumber = 1;
@@ -79,6 +80,7 @@ public class YPScraperLogic {
                 parent.properties.setProperty("province", "");
                 parent.properties.setProperty("connTimeout", "0");
                 parent.properties.setProperty("outputFolder", "");
+                parent.properties.setProperty("csvPostalCodesFile", "");
                 parent.properties.store(output, null);
             }
             propertiesFileTemp.delete();
@@ -104,6 +106,7 @@ public class YPScraperLogic {
             }
             parent.properties.setProperty("connTimeout", Integer.toString(connectionTimeout));
             parent.properties.setProperty("outputFolder", parent.getlblOutputPathData().getText());
+            parent.properties.setProperty("csvPostalCodesFile", parent.getlblPostalCodesPathData().getText());
             parent.properties.store(output, null);
         } catch (IOException io) {
             io.printStackTrace();
@@ -136,6 +139,9 @@ public class YPScraperLogic {
 
             String path = parent.properties.get("outputFolder").toString();
             parent.getlblOutputPathData().setText(path);
+            
+            String csvPath = parent.properties.get("csvPostalCodesFile").toString();
+            parent.getlblOutputPathData().setText(csvPath);
         } catch (IOException ex) {
             ex.printStackTrace();
         } finally {
@@ -194,7 +200,6 @@ public class YPScraperLogic {
                         }
                     }
                     //TODO: Run search if application have been closed and opened again
-                    //TODO: Format CSV
                 } catch (InterruptedException ex) {
                     Logger.getLogger(YPScraperLogic.class.getName()).log(Level.SEVERE, null, ex);
                 }
@@ -292,7 +297,7 @@ public class YPScraperLogic {
             url = splited[0];
         }
         if (isMultipleSearch) {
-            province = provinces[currentProvinceIndex];
+            province = postalCodes[currentProvinceIndex];
             url += "/" + province;
         } else {
             url += "/" + province;
@@ -325,5 +330,35 @@ public class YPScraperLogic {
         } catch (IOException ex) {
             Logger.getLogger(YPScraperLogic.class.getName()).log(Level.SEVERE, null, ex);
         }
+    }
+    
+    private ArrayList<String[]> getPostalCodes(){
+        String csvFile = parent.getlblPostalCodesPathData().getText();
+        BufferedReader br = null;
+        String line = "";
+        String cvsSplitBy = ",";
+        ArrayList<String[]> result = null;
+        try {
+
+            br = new BufferedReader(new FileReader(csvFile));
+            while ((line = br.readLine()) != null) {
+                String[] country = line.split(cvsSplitBy);
+                result.add(country);
+                //System.out.println("Country [code= " + country[4] + " , name=" + country[5] + "]");
+            }
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            if (br != null) {
+                try {
+                    br.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        return result;
     }
 }

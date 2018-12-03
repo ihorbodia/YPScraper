@@ -32,6 +32,8 @@ public class YPScraper extends JFrame {
     private JLabel lblStatus;
     private JLabel lblOutputPathData;
     private JLabel lblOutputPath;
+    private JLabel lblPostalCodesPathData;
+    private JLabel lblPostalCodesPath;
     private JLabel lblConnectionTimeout;
     private JTextField textFieldBusiness;
     private JSpinner textFieldConnectionTimeout;
@@ -41,6 +43,7 @@ public class YPScraper extends JFrame {
     private JButton btnStart;
     private JButton btnStop;
     private JButton btnSetOutputPath;
+    private JButton btnChooseCSVPostaCodesPath;
     private JButton btnCancel;
     private JFileChooser jfileChooser;
     
@@ -77,10 +80,26 @@ public class YPScraper extends JFrame {
         @Override
         public void actionPerformed(ActionEvent e) {
             System.out.println("SetOutputAction");
-            int returnVal = getJFileChooser().showSaveDialog(YPScraper.this);
+            int returnVal = getJFolderChooser().showSaveDialog(YPScraper.this);
             if (returnVal == JFileChooser.APPROVE_OPTION) {
-                File folder = getJFileChooser().getSelectedFile();
-                getlblOutputPathData().setText(folder.getPath());
+                File folder = getJFolderChooser().getSelectedFile();
+                getlblPostalCodesPathData().setText(folder.getPath());
+            }
+        }
+    }
+    
+    public class SetCSVPostaCodesAction implements ActionListener {
+
+        public SetCSVPostaCodesAction() {
+        }
+
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            System.out.println("Set postal codes action raised");
+            int returnVal = getJFilesChooser().showSaveDialog(YPScraper.this);
+            if (returnVal == JFileChooser.APPROVE_OPTION) {
+                File folder = getJFilesChooser().getSelectedFile();
+                getlblPostalCodesPathData().setText(folder.getPath());
             }
         }
     }
@@ -129,6 +148,7 @@ public class YPScraper extends JFrame {
         getBtnStop().addActionListener(new StopAction());
         getBtnCancel().addActionListener(new CancelAction());
         getBtnOutputPath().addActionListener(new SetOutputPathAction());
+        getBtnChooseCSVPostaCodesPath().addActionListener(new SetCSVPostaCodesAction());
     }
     
     private void initLogic() {
@@ -154,13 +174,10 @@ public class YPScraper extends JFrame {
     }
 
     public JPanel PanelMain() {
+        
         JPanel panel = new JPanel(new BorderLayout());
         panel.setBorder(new EmptyBorder(5, 5, 5, 5));
         GridBagLayout gridBagLayout = new GridBagLayout();
-        gridBagLayout.columnWidths = new int[]{0, 0, 0, 0, 0};
-        gridBagLayout.rowHeights = new int[]{0, 0, 0, 0, 0, 0};
-        gridBagLayout.columnWeights = new double[]{0.0, 1.0, 1.0, 1.0, Double.MIN_VALUE};
-        gridBagLayout.rowWeights = new double[]{1.0, 1.0, 1.0, 0.0, 1.0, Double.MIN_VALUE};
         panel.setLayout(gridBagLayout);
 
         GridBagConstraints gbc_lblBusiness = new GridBagConstraints();
@@ -172,7 +189,6 @@ public class YPScraper extends JFrame {
 
         GridBagConstraints gbc_textFieldBusiness = new GridBagConstraints();
         gbc_textFieldBusiness.fill = GridBagConstraints.HORIZONTAL;
-        gbc_textFieldBusiness.gridwidth = 3;
         gbc_textFieldBusiness.insets = new Insets(0, 0, 5, 5);
         gbc_textFieldBusiness.gridx = 1;
         gbc_textFieldBusiness.gridy = 0;
@@ -187,7 +203,6 @@ public class YPScraper extends JFrame {
 
         GridBagConstraints gbc_textFieldLocation = new GridBagConstraints();
         gbc_textFieldLocation.fill = GridBagConstraints.HORIZONTAL;
-        gbc_textFieldLocation.gridwidth = 3;
         gbc_textFieldLocation.insets = new Insets(0, 0, 5, 5);
         gbc_textFieldLocation.gridx = 1;
         gbc_textFieldLocation.gridy = 1;
@@ -202,7 +217,6 @@ public class YPScraper extends JFrame {
 
         GridBagConstraints gbc_textFieldConnTimeout = new GridBagConstraints();
         gbc_textFieldConnTimeout.fill = GridBagConstraints.HORIZONTAL;
-        gbc_textFieldConnTimeout.gridwidth = 3;
         gbc_textFieldConnTimeout.insets = new Insets(0, 0, 5, 5);
         gbc_textFieldConnTimeout.gridx = 1;
         gbc_textFieldConnTimeout.gridy = 2;
@@ -217,46 +231,64 @@ public class YPScraper extends JFrame {
 
         GridBagConstraints gbc_lblOutputPathData = new GridBagConstraints();
         gbc_lblOutputPathData.fill = GridBagConstraints.HORIZONTAL;
-        gbc_lblOutputPathData.gridwidth = 3;
         gbc_lblOutputPathData.insets = new Insets(0, 0, 5, 5);
         gbc_lblOutputPathData.gridx = 1;
         gbc_lblOutputPathData.gridy = 3;
         panel.add(getlblOutputPathData(), gbc_lblOutputPathData);
         
+        GridBagConstraints gbc_lblPostaCodesData = new GridBagConstraints();
+        gbc_lblPostaCodesData.anchor = GridBagConstraints.EAST;
+        gbc_lblPostaCodesData.insets = new Insets(0, 0, 5, 5);
+        gbc_lblPostaCodesData.gridx = 1;
+        gbc_lblPostaCodesData.gridy = 4;
+        panel.add(getlblPostalCodesPathData(), gbc_lblPostaCodesData);
+
+        GridBagConstraints gbc_lblPostalCodes = new GridBagConstraints();
+        gbc_lblPostalCodes.fill = GridBagConstraints.EAST;
+        gbc_lblPostalCodes.insets = new Insets(0, 0, 5, 5);
+        gbc_lblPostalCodes.gridx = 0;
+        gbc_lblPostalCodes.gridy = 4;
+        panel.add(getlblPostalCodesPath(), gbc_lblPostalCodes);
+        
         GridBagConstraints gbc_lblStatus = new GridBagConstraints();
         gbc_lblStatus.anchor = GridBagConstraints.EAST;
         gbc_lblStatus.insets = new Insets(0, 0, 5, 5);
         gbc_lblStatus.gridx = 0;
-        gbc_lblStatus.gridy = 4;
+        gbc_lblStatus.gridy = 5;
         panel.add(getLblStatus(), gbc_lblStatus);
 
         GridBagConstraints gbc_textFieldStatus = new GridBagConstraints();
         gbc_textFieldStatus.fill = GridBagConstraints.HORIZONTAL;
-        gbc_textFieldStatus.gridwidth = 3;
         gbc_textFieldStatus.insets = new Insets(0, 0, 5, 5);
         gbc_textFieldStatus.gridx = 1;
-        gbc_textFieldStatus.gridy = 4;
+        gbc_textFieldStatus.gridy = 5;
         panel.add(getTextFieldStatus(), gbc_textFieldStatus);
 
         GridBagConstraints gbc_btnStart = new GridBagConstraints();
         gbc_btnStart.anchor = GridBagConstraints.WEST;
         gbc_btnStart.insets = new Insets(0, 0, 0, 5);
-        gbc_btnStart.gridx = 1;
-        gbc_btnStart.gridy = 5;
+        gbc_btnStart.gridx = 0;
+        gbc_btnStart.gridy = 6;
         panel.add(getBtnStart(), gbc_btnStart);
 
         GridBagConstraints gbc_btnStop = new GridBagConstraints();
         gbc_btnStop.insets = new Insets(0, 0, 0, 5);
         gbc_btnStop.gridx = 7;
-        gbc_btnStop.gridy = 5;
+        gbc_btnStop.gridy = 6;
         panel.add(getBtnStop(), gbc_btnStop);
         
         GridBagConstraints gbc_btnSetOutputFolder = new GridBagConstraints();
         gbc_btnSetOutputFolder.insets = new Insets(0, 0, 0, 5);
-        gbc_btnSetOutputFolder.gridx = 2;
-        gbc_btnSetOutputFolder.gridy = 5;
+        gbc_btnSetOutputFolder.gridx = 1;
+        gbc_btnSetOutputFolder.gridy = 6;
         panel.add(getBtnOutputPath(), gbc_btnSetOutputFolder);
 
+        GridBagConstraints gbc_btnSetCSVPostaCodesFolder = new GridBagConstraints();
+        gbc_btnSetCSVPostaCodesFolder.insets = new Insets(0, 0, 0, 5);
+        gbc_btnSetCSVPostaCodesFolder.gridx = 2;
+        gbc_btnSetCSVPostaCodesFolder.gridy = 6;
+        panel.add(getBtnChooseCSVPostaCodesPath(), gbc_btnSetCSVPostaCodesFolder);
+        
 //        GridBagConstraints gbc_btnCancel = new GridBagConstraints();
 //        gbc_btnCancel.insets = new Insets(0, 0, 0, 5);
 //        gbc_btnCancel.anchor = GridBagConstraints.EAST;
@@ -265,6 +297,20 @@ public class YPScraper extends JFrame {
 //        panel.add(getBtnCancel(), gbc_btnCancel);
         panel.setVisible(true);
         return panel;
+    }
+    
+    public JLabel getlblPostalCodesPathData() {
+        if (lblPostalCodesPathData == null) {
+            lblPostalCodesPathData = new JLabel("");
+        }
+        return lblPostalCodesPathData;
+    }
+
+    private JLabel getlblPostalCodesPath() {
+        if (lblPostalCodesPath == null) {
+            lblPostalCodesPath = new JLabel("Postal codes CSV:");
+        }
+        return lblPostalCodesPath;
     }
     
     public JLabel getlblOutputPathData() {
@@ -340,7 +386,7 @@ public class YPScraper extends JFrame {
                 }
             ;
             };
-			textFieldStatus.setEditable(false);
+            textFieldStatus.setEditable(false);
             textFieldStatus.setColumns(10);
             textFieldStatus.setBorder(BorderFactory.createEmptyBorder());
         }
@@ -377,6 +423,14 @@ public class YPScraper extends JFrame {
         }
         return btnSetOutputPath;
     }
+    
+    public JButton getBtnChooseCSVPostaCodesPath() {
+        if (btnChooseCSVPostaCodesPath == null) {
+            btnChooseCSVPostaCodesPath = new JButton("Choose postal codes");
+            btnChooseCSVPostaCodesPath.setEnabled(true);
+        }
+        return btnChooseCSVPostaCodesPath;
+    }
 
     public JButton getBtnCancel() {
         if (btnCancel == null) {
@@ -385,10 +439,18 @@ public class YPScraper extends JFrame {
         return btnCancel;
     }
     
-    private JFileChooser getJFileChooser() {
+    private JFileChooser getJFolderChooser() {
         if (jfileChooser == null) {
             jfileChooser = new JFileChooser();
             jfileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+        }
+        return jfileChooser;
+    }
+    
+    private JFileChooser getJFilesChooser() {
+        if (jfileChooser == null) {
+            jfileChooser = new JFileChooser();
+            jfileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
         }
         return jfileChooser;
     }
