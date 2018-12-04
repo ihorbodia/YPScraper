@@ -60,17 +60,14 @@ public class YPScraper extends JFrame {
         @Override
         public void actionPerformed(ActionEvent e) {
             System.out.println("Start");
-            try {
-                logic.Run();
+                logic.Run(true);
                 getBtnStop().setEnabled(true);
                 getBtnStart().setEnabled(false);
-            } catch (IOException ex) {
-                Logger.getLogger(YPScraper.class.getName()).log(Level.SEVERE, null, ex);
-            } catch (InterruptedException ex) {
-                Logger.getLogger(YPScraper.class.getName()).log(Level.SEVERE, null, ex);
-            } catch (ExecutionException ex) {
-                Logger.getLogger(YPScraper.class.getName()).log(Level.SEVERE, null, ex);
-            }
+                getBtnChooseCSVPostaCodesPath().setEnabled(false);
+                getBtnOutputPath().setEnabled(false);
+                logic.getPostalCodes(getlblPostalCodesPathData().getText());
+                logic.saveProperties();
+         
         }
     }
     
@@ -102,7 +99,7 @@ public class YPScraper extends JFrame {
             if (returnVal == JFileChooser.APPROVE_OPTION) {
                 File folder = getJFilesChooser().getSelectedFile();
                 getlblPostalCodesPathData().setText(folder.getPath());
-                logic.getPostalCodes();
+                logic.getPostalCodes(getlblPostalCodesPathData().getText());
             }
         }
     }
@@ -116,10 +113,18 @@ public class YPScraper extends JFrame {
         @Override
         public void actionPerformed(ActionEvent e) {
             System.out.println("Stop");
-            if (logic != null && logic.future != null) {
-                logic.future.cancel(true);
+            if (logic != null) {
+                if (logic.future != null) {
+                    logic.future.cancel(true);
+                }
+                getBtnStart().setEnabled(true);
+                getBtnChooseCSVPostaCodesPath().setEnabled(true);
+                getBtnOutputPath().setEnabled(true);
                 getBtnStop().setEnabled(false);
+                logic.running = false;
+                logic.saveDataToFile();
             }
+            logic.saveProperties();
         }
     }
 
