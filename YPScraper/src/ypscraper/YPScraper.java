@@ -102,6 +102,7 @@ public class YPScraper extends JFrame {
             if (returnVal == JFileChooser.APPROVE_OPTION) {
                 File folder = getJFilesChooser().getSelectedFile();
                 getlblPostalCodesPathData().setText(folder.getPath());
+                logic.getPostalCodes();
             }
         }
     }

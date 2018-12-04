@@ -332,19 +332,23 @@ public class YPScraperLogic {
         }
     }
     
-    private ArrayList<String[]> getPostalCodes(){
+    public ArrayList<String> getPostalCodes(){
         String csvFile = parent.getlblPostalCodesPathData().getText();
         BufferedReader br = null;
         String line = "";
         String cvsSplitBy = ",";
-        ArrayList<String[]> result = null;
+        ArrayList<String> result = new ArrayList<String>();
         try {
 
             br = new BufferedReader(new FileReader(csvFile));
+            boolean header = true;
             while ((line = br.readLine()) != null) {
+                if (header) {
+                    header = false;
+                    continue;
+                }
                 String[] country = line.split(cvsSplitBy);
-                result.add(country);
-                //System.out.println("Country [code= " + country[4] + " , name=" + country[5] + "]");
+                result.add(country[0]);
             }
         } catch (FileNotFoundException e) {
             e.printStackTrace();
