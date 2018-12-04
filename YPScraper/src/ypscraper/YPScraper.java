@@ -25,6 +25,7 @@ import javax.swing.JTextField;
 import javax.swing.border.EmptyBorder;
 import ypscraper.work.YPScraperLogic;
 
+
 public class YPScraper extends JFrame {
 
     private JLabel lblBusiness;
@@ -46,6 +47,7 @@ public class YPScraper extends JFrame {
     private JButton btnChooseCSVPostaCodesPath;
     private JButton btnCancel;
     private JFileChooser jfileChooser;
+    private JFileChooser jfolderChooser;
     
     YPScraperLogic logic;
     public Properties properties = new Properties();
@@ -83,7 +85,7 @@ public class YPScraper extends JFrame {
             int returnVal = getJFolderChooser().showSaveDialog(YPScraper.this);
             if (returnVal == JFileChooser.APPROVE_OPTION) {
                 File folder = getJFolderChooser().getSelectedFile();
-                getlblPostalCodesPathData().setText(folder.getPath());
+                getlblOutputPathData().setText(folder.getPath());
             }
         }
     }
@@ -181,15 +183,16 @@ public class YPScraper extends JFrame {
         panel.setLayout(gridBagLayout);
 
         GridBagConstraints gbc_lblBusiness = new GridBagConstraints();
-        gbc_lblBusiness.anchor = GridBagConstraints.EAST;
         gbc_lblBusiness.insets = new Insets(0, 0, 5, 5);
+        gbc_lblBusiness.anchor = GridBagConstraints.EAST;
         gbc_lblBusiness.gridx = 0;
         gbc_lblBusiness.gridy = 0;
         panel.add(getLblBusiness(), gbc_lblBusiness);
 
         GridBagConstraints gbc_textFieldBusiness = new GridBagConstraints();
-        gbc_textFieldBusiness.fill = GridBagConstraints.HORIZONTAL;
         gbc_textFieldBusiness.insets = new Insets(0, 0, 5, 5);
+        gbc_textFieldBusiness.fill = GridBagConstraints.HORIZONTAL;
+        gbc_textFieldBusiness.gridwidth = 5;
         gbc_textFieldBusiness.gridx = 1;
         gbc_textFieldBusiness.gridy = 0;
         panel.add(getTextFieldBusiness(), gbc_textFieldBusiness);
@@ -202,71 +205,76 @@ public class YPScraper extends JFrame {
         panel.add(getLblLocation(), gbc_lblLocation);
 
         GridBagConstraints gbc_textFieldLocation = new GridBagConstraints();
-        gbc_textFieldLocation.fill = GridBagConstraints.HORIZONTAL;
         gbc_textFieldLocation.insets = new Insets(0, 0, 5, 5);
+        gbc_textFieldLocation.fill = GridBagConstraints.HORIZONTAL;
+        gbc_textFieldLocation.gridwidth = 5;
         gbc_textFieldLocation.gridx = 1;
         gbc_textFieldLocation.gridy = 1;
         panel.add(getTextFieldLocation(), gbc_textFieldLocation);
 
         GridBagConstraints gbc_lblConnTimeout = new GridBagConstraints();
-        gbc_lblConnTimeout.anchor = GridBagConstraints.EAST;
         gbc_lblConnTimeout.insets = new Insets(0, 0, 5, 5);
+        gbc_lblConnTimeout.anchor = GridBagConstraints.EAST;
         gbc_lblConnTimeout.gridx = 0;
         gbc_lblConnTimeout.gridy = 2;
         panel.add(getLblConnectionTimeout(), gbc_lblConnTimeout);
 
         GridBagConstraints gbc_textFieldConnTimeout = new GridBagConstraints();
-        gbc_textFieldConnTimeout.fill = GridBagConstraints.HORIZONTAL;
         gbc_textFieldConnTimeout.insets = new Insets(0, 0, 5, 5);
+        gbc_textFieldConnTimeout.fill = GridBagConstraints.HORIZONTAL;
+        gbc_textFieldConnTimeout.gridwidth = 5;
         gbc_textFieldConnTimeout.gridx = 1;
         gbc_textFieldConnTimeout.gridy = 2;
         panel.add(getTextFieldConnectionTimeout(), gbc_textFieldConnTimeout);
 
         GridBagConstraints gbc_lblOutputPath = new GridBagConstraints();
-        gbc_lblOutputPath.anchor = GridBagConstraints.EAST;
         gbc_lblOutputPath.insets = new Insets(0, 0, 5, 5);
+        gbc_lblOutputPath.anchor = GridBagConstraints.EAST;
         gbc_lblOutputPath.gridx = 0;
         gbc_lblOutputPath.gridy = 3;
         panel.add(getlblOutputPath(), gbc_lblOutputPath);
 
         GridBagConstraints gbc_lblOutputPathData = new GridBagConstraints();
-        gbc_lblOutputPathData.fill = GridBagConstraints.HORIZONTAL;
         gbc_lblOutputPathData.insets = new Insets(0, 0, 5, 5);
+        gbc_lblOutputPathData.fill = GridBagConstraints.HORIZONTAL;
+        gbc_lblOutputPathData.gridwidth = 5;
         gbc_lblOutputPathData.gridx = 1;
         gbc_lblOutputPathData.gridy = 3;
         panel.add(getlblOutputPathData(), gbc_lblOutputPathData);
         
-        GridBagConstraints gbc_lblPostaCodesData = new GridBagConstraints();
-        gbc_lblPostaCodesData.anchor = GridBagConstraints.EAST;
-        gbc_lblPostaCodesData.insets = new Insets(0, 0, 5, 5);
-        gbc_lblPostaCodesData.gridx = 1;
-        gbc_lblPostaCodesData.gridy = 4;
-        panel.add(getlblPostalCodesPathData(), gbc_lblPostaCodesData);
-
         GridBagConstraints gbc_lblPostalCodes = new GridBagConstraints();
-        gbc_lblPostalCodes.fill = GridBagConstraints.EAST;
         gbc_lblPostalCodes.insets = new Insets(0, 0, 5, 5);
+        gbc_lblPostalCodes.anchor = GridBagConstraints.EAST;
         gbc_lblPostalCodes.gridx = 0;
         gbc_lblPostalCodes.gridy = 4;
         panel.add(getlblPostalCodesPath(), gbc_lblPostalCodes);
         
+        GridBagConstraints gbc_lblPostaCodesData = new GridBagConstraints();
+        gbc_lblPostaCodesData.insets = new Insets(0, 0, 5, 5);
+        gbc_lblPostaCodesData.fill = GridBagConstraints.HORIZONTAL;
+        gbc_lblPostaCodesData.weightx = 0.6;
+        gbc_lblPostaCodesData.gridwidth = 5;
+        gbc_lblPostaCodesData.gridx = 1;
+        gbc_lblPostaCodesData.gridy = 4;
+        panel.add(getlblPostalCodesPathData(), gbc_lblPostaCodesData);
+        
         GridBagConstraints gbc_lblStatus = new GridBagConstraints();
-        gbc_lblStatus.anchor = GridBagConstraints.EAST;
         gbc_lblStatus.insets = new Insets(0, 0, 5, 5);
+        gbc_lblStatus.anchor = GridBagConstraints.EAST;
         gbc_lblStatus.gridx = 0;
         gbc_lblStatus.gridy = 5;
         panel.add(getLblStatus(), gbc_lblStatus);
 
         GridBagConstraints gbc_textFieldStatus = new GridBagConstraints();
-        gbc_textFieldStatus.fill = GridBagConstraints.HORIZONTAL;
         gbc_textFieldStatus.insets = new Insets(0, 0, 5, 5);
+        gbc_textFieldStatus.gridwidth = 5;
         gbc_textFieldStatus.gridx = 1;
         gbc_textFieldStatus.gridy = 5;
         panel.add(getTextFieldStatus(), gbc_textFieldStatus);
 
         GridBagConstraints gbc_btnStart = new GridBagConstraints();
-        gbc_btnStart.anchor = GridBagConstraints.WEST;
         gbc_btnStart.insets = new Insets(0, 0, 0, 5);
+        gbc_btnStart.anchor = GridBagConstraints.EAST;
         gbc_btnStart.gridx = 0;
         gbc_btnStart.gridy = 6;
         panel.add(getBtnStart(), gbc_btnStart);
@@ -289,12 +297,6 @@ public class YPScraper extends JFrame {
         gbc_btnSetCSVPostaCodesFolder.gridy = 6;
         panel.add(getBtnChooseCSVPostaCodesPath(), gbc_btnSetCSVPostaCodesFolder);
         
-//        GridBagConstraints gbc_btnCancel = new GridBagConstraints();
-//        gbc_btnCancel.insets = new Insets(0, 0, 0, 5);
-//        gbc_btnCancel.anchor = GridBagConstraints.EAST;
-//        gbc_btnCancel.gridx = 7;
-//        gbc_btnCancel.gridy = 5;
-//        panel.add(getBtnCancel(), gbc_btnCancel);
         panel.setVisible(true);
         return panel;
     }
@@ -352,6 +354,7 @@ public class YPScraper extends JFrame {
         if (textFieldBusiness == null) {
             textFieldBusiness = new JTextField();
             textFieldBusiness.setColumns(10);
+            textFieldBusiness.setVisible(true);
         }
         return textFieldBusiness;
     }
@@ -440,11 +443,11 @@ public class YPScraper extends JFrame {
     }
     
     private JFileChooser getJFolderChooser() {
-        if (jfileChooser == null) {
-            jfileChooser = new JFileChooser();
-            jfileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+        if (jfolderChooser == null) {
+            jfolderChooser = new JFileChooser();
+            jfolderChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
         }
-        return jfileChooser;
+        return jfolderChooser;
     }
     
     private JFileChooser getJFilesChooser() {
