@@ -95,11 +95,12 @@ public class YPScraper extends JFrame {
             int returnVal = getJFilesChooser().showSaveDialog(YPScraper.this);
             if (returnVal == JFileChooser.APPROVE_OPTION) {
                 File folder = getJFilesChooser().getSelectedFile();
-                getlblPostalCodesPathData().setText(folder.getPath());
+                getlblPostalCodesPathData().setText(folder.getName());
                 logic.getPostalCodes(getlblPostalCodesPathData().getText());
             }
         }
     }
+   
 
     public class StopAction implements ActionListener {
 
@@ -139,9 +140,8 @@ public class YPScraper extends JFrame {
     public static void main(String[] args) throws IOException {
         YPScraper frame = new YPScraper();
         frame.pack();
-        Dimension frameSize = frame.getSize();
-        frameSize.width += 100;
-        frame.setMinimumSize(frameSize);
+        frame.setSize(new Dimension(600, 200));
+        frame.setResizable(false);
         frame.setVisible(true);
        
     }

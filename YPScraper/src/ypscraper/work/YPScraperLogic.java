@@ -227,7 +227,7 @@ public class YPScraperLogic {
                 parent.getBtnChooseCSVPostaCodesPath().setEnabled(false);
                 while (true) {
                     if (future.isDone()) {
-                        System.out.println("Return: isDone");
+                        System.out.println("Program: Finished");
                         break;
                     }
                 }
@@ -245,7 +245,9 @@ public class YPScraperLogic {
             SwingUtilities.invokeLater(new Runnable() {
                 @Override
                 public void run() {
-                    parent.getTextFieldStatus().setText(postalCodeIndex + "/" + postalCodes.length+ " locations processed. " + storage.List.size() + " items scraped.");
+                    if (postalCodeIndex <= postalCodes.length) {
+                        parent.getTextFieldStatus().setText(postalCodeIndex + "/" + postalCodes.length+ " locations processed. " + storage.List.size() + " items scraped.");
+                    }
                 }
             });
             return;
@@ -401,7 +403,7 @@ public class YPScraperLogic {
             }
         } catch (IOException ex) {
             Logger.getLogger(YPScraperLogic.class.getName()).log(Level.SEVERE, null, ex);
-            JOptionPane.showMessageDialog(null, "Something wrong with output file. Try close output file and start again.", "Data wasn't saved ", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(null, "Something wrong with output file: \n\n"+ex.getMessage(), "Data wasn't saved ", JOptionPane.ERROR_MESSAGE);
         }
         storage.List.clear();
     }
@@ -427,8 +429,12 @@ public class YPScraperLogic {
         postalCodes = result.toArray(new String[0]);
         } catch (FileNotFoundException e) {
             e.printStackTrace();
+            JOptionPane.showMessageDialog(null, "Something wrong with input CSV file. Try to check path and start again.", "Input csv file problem", JOptionPane.ERROR_MESSAGE);
+            continueWork = false;
         } catch (IOException e) {
             e.printStackTrace();
+            JOptionPane.showMessageDialog(null, "Something wrong with input CSV file.", "Input csv file problem", JOptionPane.ERROR_MESSAGE);
+            continueWork = false;
         } finally {
             if (br != null) {
                 try {
