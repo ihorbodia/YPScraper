@@ -52,7 +52,6 @@ public class YPScraperLogic {
     private String province;
     String separator = File.separator;
     ExecutorService executorService;
-    int connectionTimeout;
     File propertiesFile;
     ScrapedItemsStorage storage;
     boolean isMultipleSearch;
@@ -111,7 +110,6 @@ public class YPScraperLogic {
             if (!isMultipleSearch) {
                 parent.properties.setProperty("province", province);
             }
-            parent.properties.setProperty("connTimeout", Integer.toString(connectionTimeout));
             parent.properties.setProperty("outputFolder", parent.getlblOutputPathData().getText());
             parent.properties.setProperty("csvPostalCodesFile", parent.getlblPostalCodesPathData().getText());
             parent.properties.setProperty("running", String.valueOf(running));
@@ -141,10 +139,6 @@ public class YPScraperLogic {
 
             province = parent.properties.get("province").toString();
             parent.getTextFieldLocation().setText(province);
-
-            String value = parent.properties.get("connTimeout").toString();
-            connectionTimeout = Integer.parseInt(value);
-            parent.getTextFieldConnectionTimeout().setValue(connectionTimeout);
 
             String path = parent.properties.get("outputFolder").toString();
             parent.getlblOutputPathData().setText(path);
@@ -184,7 +178,6 @@ public class YPScraperLogic {
 
     public void Run(boolean isStartRun) {
         business = parent.getTextFieldBusiness().getText();
-        connectionTimeout = (Integer) parent.getTextFieldConnectionTimeout().getValue();
         province = parent.getTextFieldLocation().getText();
 
         storage = new ScrapedItemsStorage(business, province);
@@ -210,7 +203,6 @@ public class YPScraperLogic {
                         }
                         isMultipleSearch = true;
                         while (continueWork) {
-                            updateGUI();
                             prepareURL(currentPageNumber);
                             int pages = countPages();
                             for (int i = 2; i <= pages; i++) {
@@ -220,7 +212,6 @@ public class YPScraperLogic {
                             }
                             postalCodeIndex++;
                             saveProperties();
-
                         }
                         saveDataToFile();
                     }
@@ -281,6 +272,7 @@ public class YPScraperLogic {
             String address = el.select("div.listing__address").text();
             storage.List.add(new ScrapedItem(title, address.replace("Get directions", ""), processLink(link), province));
         }
+        updateGUI();
         System.out.println(storage.List.size());
     }
 
@@ -361,7 +353,6 @@ public class YPScraperLogic {
 
     public void saveDataToFile() {
         StringBuilder sb = new StringBuilder();
-        //Headers
        
         try {
             Path path = null;
@@ -410,7 +401,7 @@ public class YPScraperLogic {
             }
         } catch (IOException ex) {
             Logger.getLogger(YPScraperLogic.class.getName()).log(Level.SEVERE, null, ex);
-            JOptionPane.showMessageDialog(null, "Something wrong with file. Try close output file and start again.", "Info:", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(null, "Something wrong with output file. Try close output file and start again.", "Data wasn't saved ", JOptionPane.ERROR_MESSAGE);
         }
         storage.List.clear();
     }

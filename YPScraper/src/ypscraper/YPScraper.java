@@ -61,8 +61,8 @@ public class YPScraper extends JFrame {
         @Override
         public void actionPerformed(ActionEvent e) {
             System.out.println("Start");
-                logic.Run(true);
                 logic.getPostalCodes(getlblPostalCodesPathData().getText());
+                logic.Run(true);
                 logic.saveProperties();
                 logic.removeOldFileIfExists();
         }
@@ -260,7 +260,8 @@ public class YPScraper extends JFrame {
 
         GridBagConstraints gbc_textFieldStatus = new GridBagConstraints();
         gbc_textFieldStatus.insets = new Insets(0, 0, 5, 5);
-        gbc_textFieldStatus.gridwidth = 1;
+        gbc_lblStatus.anchor = GridBagConstraints.WEST;
+        gbc_textFieldStatus.gridwidth = 2;
         gbc_textFieldStatus.gridx = 1;
         gbc_textFieldStatus.gridy = 5;
         panel.add(getTextFieldStatus(), gbc_textFieldStatus);
