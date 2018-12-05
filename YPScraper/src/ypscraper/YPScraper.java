@@ -154,7 +154,9 @@ public class YPScraper extends JFrame {
         getBtnChooseCSVPostaCodesPath().addActionListener(new SetCSVPostaCodesAction());
         Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
             public void run() {
-                logic.saveDataToFile();
+                if (!logic.future.isDone()) {
+                    logic.saveDataToFile();
+                }
             }
         }));
     }
@@ -218,21 +220,6 @@ public class YPScraper extends JFrame {
         gbc_textFieldLocation.gridy = 1;
         panel.add(getTextFieldLocation(), gbc_textFieldLocation);
 
-        GridBagConstraints gbc_lblConnTimeout = new GridBagConstraints();
-        gbc_lblConnTimeout.insets = new Insets(0, 0, 5, 5);
-        gbc_lblConnTimeout.anchor = GridBagConstraints.EAST;
-        gbc_lblConnTimeout.gridx = 0;
-        gbc_lblConnTimeout.gridy = 2;
-        //panel.add(getLblConnectionTimeout(), gbc_lblConnTimeout);
-
-        GridBagConstraints gbc_textFieldConnTimeout = new GridBagConstraints();
-        gbc_textFieldConnTimeout.insets = new Insets(0, 0, 5, 5);
-        gbc_textFieldConnTimeout.fill = GridBagConstraints.HORIZONTAL;
-        gbc_textFieldConnTimeout.gridwidth = 5;
-        gbc_textFieldConnTimeout.gridx = 1;
-        gbc_textFieldConnTimeout.gridy = 2;
-        //panel.add(getTextFieldConnectionTimeout(), gbc_textFieldConnTimeout);
-
         GridBagConstraints gbc_lblOutputPath = new GridBagConstraints();
         gbc_lblOutputPath.insets = new Insets(0, 0, 5, 5);
         gbc_lblOutputPath.anchor = GridBagConstraints.EAST;
@@ -273,7 +260,7 @@ public class YPScraper extends JFrame {
 
         GridBagConstraints gbc_textFieldStatus = new GridBagConstraints();
         gbc_textFieldStatus.insets = new Insets(0, 0, 5, 5);
-        gbc_textFieldStatus.gridwidth = 2;
+        gbc_textFieldStatus.gridwidth = 1;
         gbc_textFieldStatus.gridx = 1;
         gbc_textFieldStatus.gridy = 5;
         panel.add(getTextFieldStatus(), gbc_textFieldStatus);

@@ -26,6 +26,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 import org.apache.commons.io.FilenameUtils;
 import org.jsoup.Jsoup;
@@ -253,7 +254,7 @@ public class YPScraperLogic {
             SwingUtilities.invokeLater(new Runnable() {
                 @Override
                 public void run() {
-                    parent.getTextFieldStatus().setText(postalCodeIndex + "/" + postalCodes.length+ " locations processed");
+                    parent.getTextFieldStatus().setText(postalCodeIndex + "/" + postalCodes.length+ " locations processed. " + storage.List.size() + " items scraped.");
                 }
             });
             return;
@@ -311,7 +312,9 @@ public class YPScraperLogic {
     private int countPages() {
         Document doc = scrapePage();
         String count = doc.select("span.contentControls-msg").select("strong").text().replace(",", "");
-
+        if (count.equalsIgnoreCase("")) {
+            count = "0";
+        }
         float fcount = Float.parseFloat(count);
         int icount = Integer.parseInt(count);
 
@@ -407,6 +410,7 @@ public class YPScraperLogic {
             }
         } catch (IOException ex) {
             Logger.getLogger(YPScraperLogic.class.getName()).log(Level.SEVERE, null, ex);
+            JOptionPane.showMessageDialog(null, "Something wrong with file. Try close output file and start again.", "Info:", JOptionPane.ERROR_MESSAGE);
         }
         storage.List.clear();
     }
