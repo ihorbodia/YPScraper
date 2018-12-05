@@ -1,6 +1,7 @@
 package ypscraper;
 
 import java.awt.BorderLayout;
+import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -39,7 +40,7 @@ public class YPScraper extends JFrame {
     private JTextField textFieldBusiness;
     private JSpinner textFieldConnectionTimeout;
     private JTextField textFieldLocation;
-    private JTextField textFieldStatus;
+    private JLabel textFieldStatus;
     private JProgressBar progressBar;
     private JButton btnStart;
     private JButton btnStop;
@@ -61,13 +62,9 @@ public class YPScraper extends JFrame {
         public void actionPerformed(ActionEvent e) {
             System.out.println("Start");
                 logic.Run(true);
-                getBtnStop().setEnabled(true);
-                getBtnStart().setEnabled(false);
-                getBtnChooseCSVPostaCodesPath().setEnabled(false);
-                getBtnOutputPath().setEnabled(false);
                 logic.getPostalCodes(getlblPostalCodesPathData().getText());
                 logic.saveProperties();
-         
+                logic.removeOldFileIfExists();
         }
     }
     
@@ -117,11 +114,8 @@ public class YPScraper extends JFrame {
                 if (logic.future != null) {
                     logic.future.cancel(true);
                 }
-                getBtnStart().setEnabled(true);
-                getBtnChooseCSVPostaCodesPath().setEnabled(true);
-                getBtnOutputPath().setEnabled(true);
-                getBtnStop().setEnabled(false);
                 logic.running = false;
+                logic.continueWork = false;
                 logic.saveDataToFile();
             }
             logic.saveProperties();
@@ -149,6 +143,7 @@ public class YPScraper extends JFrame {
         frameSize.width += 100;
         frame.setMinimumSize(frameSize);
         frame.setVisible(true);
+       
     }
 
     private void initActions() {
@@ -157,6 +152,11 @@ public class YPScraper extends JFrame {
         getBtnCancel().addActionListener(new CancelAction());
         getBtnOutputPath().addActionListener(new SetOutputPathAction());
         getBtnChooseCSVPostaCodesPath().addActionListener(new SetCSVPostaCodesAction());
+        Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
+            public void run() {
+                logic.saveDataToFile();
+            }
+        }));
     }
     
     private void initLogic() {
@@ -223,7 +223,7 @@ public class YPScraper extends JFrame {
         gbc_lblConnTimeout.anchor = GridBagConstraints.EAST;
         gbc_lblConnTimeout.gridx = 0;
         gbc_lblConnTimeout.gridy = 2;
-        panel.add(getLblConnectionTimeout(), gbc_lblConnTimeout);
+        //panel.add(getLblConnectionTimeout(), gbc_lblConnTimeout);
 
         GridBagConstraints gbc_textFieldConnTimeout = new GridBagConstraints();
         gbc_textFieldConnTimeout.insets = new Insets(0, 0, 5, 5);
@@ -231,7 +231,7 @@ public class YPScraper extends JFrame {
         gbc_textFieldConnTimeout.gridwidth = 5;
         gbc_textFieldConnTimeout.gridx = 1;
         gbc_textFieldConnTimeout.gridy = 2;
-        panel.add(getTextFieldConnectionTimeout(), gbc_textFieldConnTimeout);
+        //panel.add(getTextFieldConnectionTimeout(), gbc_textFieldConnTimeout);
 
         GridBagConstraints gbc_lblOutputPath = new GridBagConstraints();
         gbc_lblOutputPath.insets = new Insets(0, 0, 5, 5);
@@ -273,7 +273,7 @@ public class YPScraper extends JFrame {
 
         GridBagConstraints gbc_textFieldStatus = new GridBagConstraints();
         gbc_textFieldStatus.insets = new Insets(0, 0, 5, 5);
-        gbc_textFieldStatus.gridwidth = 5;
+        gbc_textFieldStatus.gridwidth = 2;
         gbc_textFieldStatus.gridx = 1;
         gbc_textFieldStatus.gridy = 5;
         panel.add(getTextFieldStatus(), gbc_textFieldStatus);
@@ -387,17 +387,10 @@ public class YPScraper extends JFrame {
         return lblStatus;
     }
 
-    public JTextField getTextFieldStatus() {
+    public JLabel getTextFieldStatus() {
         if (textFieldStatus == null) {
-            textFieldStatus = new JTextField() {
-                public void setText(String arg0) {
-                    super.setText(arg0);
-                }
-            ;
-            };
-            textFieldStatus.setEditable(false);
-            textFieldStatus.setColumns(10);
-            textFieldStatus.setBorder(BorderFactory.createEmptyBorder());
+            textFieldStatus = new JLabel();
+            textFieldStatus.setAlignmentX(Component.LEFT_ALIGNMENT);
         }
         return textFieldStatus;
     }

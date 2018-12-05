@@ -18,6 +18,7 @@ import java.io.UnsupportedEncodingException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -25,6 +26,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.swing.SwingUtilities;
 import org.apache.commons.io.FilenameUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -42,6 +44,7 @@ public class YPScraperLogic {
     private String[] postalCodes = null;
     private static String business;
     private String currentURL;
+    public boolean continueWork = false;
     private int currentPageNumber = 1;
     private String CABaseURLPart = "https://www.yellowpages.ca/search/si";
     private String CAMainURL = "https://www.yellowpages.ca";
@@ -186,9 +189,8 @@ public class YPScraperLogic {
         storage = new ScrapedItemsStorage(business, province);
         executorService = Executors.newSingleThreadExecutor();
         future = executorService.submit(new Runnable() {
-            boolean continueWork = true;
-
             public void run() {
+                continueWork = true;
                 running = true;
                 currentPageNumber = 1;
                     if (!province.equalsIgnoreCase("")) {
@@ -207,6 +209,7 @@ public class YPScraperLogic {
                         }
                         isMultipleSearch = true;
                         while (continueWork) {
+                            updateGUI();
                             prepareURL(currentPageNumber);
                             int pages = countPages();
                             for (int i = 2; i <= pages; i++) {
@@ -216,7 +219,7 @@ public class YPScraperLogic {
                             }
                             postalCodeIndex++;
                             saveProperties();
-                            
+
                         }
                         saveDataToFile();
                     }
@@ -226,6 +229,10 @@ public class YPScraperLogic {
         });
         Thread thread = new Thread() {
             public void run() {
+                parent.getBtnStart().setEnabled(false);
+                parent.getBtnStop().setEnabled(true);
+                parent.getBtnOutputPath().setEnabled(false);
+                parent.getBtnChooseCSVPostaCodesPath().setEnabled(false);
                 while (true) {
                     if (future.isDone()) {
                         System.out.println("Return: isDone");
@@ -240,6 +247,25 @@ public class YPScraperLogic {
         };
         thread.start();
     }
+    
+    public void updateGUI() {
+        if (!SwingUtilities.isEventDispatchThread()) {
+            SwingUtilities.invokeLater(new Runnable() {
+                @Override
+                public void run() {
+                    parent.getTextFieldStatus().setText(postalCodeIndex + "/" + postalCodes.length+ " locations processed");
+                }
+            });
+            return;
+        }
+    }
+    
+    public void removeOldFileIfExists() {
+        File f = new File(parent.getlblOutputPathData().toString());
+            if (f.exists() && !f.isDirectory()) {
+                f.delete();
+            }
+    }
 
     private void parseCurrentPage(Document doc) {
         if (doc == null) {
@@ -249,10 +275,10 @@ public class YPScraperLogic {
         Element items = (Element) doc.select("div.resultList").first().childNode(1);
         Elements els = items.select("div.listing");
         for (Element el : els) {
-            String title = el.select("h3.listing__name").select("a").text();
+            String title = el.select("h3.listing__name").select("a.listing__link").text();
             String link = processLink(el.select("li.mlr__item--website").select("a").attr("href"));
             String address = el.select("div.listing__address").text();
-            storage.List.add(new ScrapedItem(title, address.replace("Get directions", ""), processLink(link)));
+            storage.List.add(new ScrapedItem(title, address.replace("Get directions", ""), processLink(link), province));
         }
         System.out.println(storage.List.size());
     }
@@ -264,7 +290,8 @@ public class YPScraperLogic {
         }
         try {
             String res = java.net.URLDecoder.decode(link, "UTF-8");
-            result = res.substring(res.indexOf("=") + 1);
+            result = res.substring(res.indexOf("redirect=") + 1);
+            result = result.replace("edirect=", "");
         } catch (UnsupportedEncodingException ex) {
             Logger.getLogger(YPScraperLogic.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -317,7 +344,11 @@ public class YPScraperLogic {
             url = splited[0];
         }
         if (isMultipleSearch) {
-            province = postalCodes[postalCodeIndex];
+            if (postalCodes.length > postalCodeIndex) {
+                province = postalCodes[postalCodeIndex];
+            } else {
+                continueWork = false;
+            }
             url += "/" + province;
         } else {
             url += "/" + province;
@@ -328,25 +359,52 @@ public class YPScraperLogic {
     public void saveDataToFile() {
         StringBuilder sb = new StringBuilder();
         //Headers
-        sb.append("Link");
-        sb.append(',');
-        sb.append("\"Name\"");
-        sb.append(',');
-        sb.append("\"Address\"");
-        sb.append('\n');
-
-        //Data
-        for (int i = 0; i < storage.List.size(); i++) {
-            sb.append(storage.List.get(i).Link);
-            sb.append(',');
-            sb.append("\"" +storage.List.get(i).Name+ "\"");
-            sb.append(',');
-            sb.append("\"" + storage.List.get(i).Address + "\"");
-            sb.append('\n');
-        }
+       
         try {
-            Path path = Paths.get(parent.getlblOutputPathData().getText() + separator + business.replace(" ", "") + "_" + province + ".csv");
-            Files.write(path, sb.toString().getBytes());
+            Path path = null;
+            if (!parent.getTextFieldLocation().getText().equalsIgnoreCase("")) {
+                path = Paths.get(parent.getlblOutputPathData().getText() + separator + business.replace(" ", "") + "_" + province + ".csv");
+            }
+            else{
+                path = Paths.get(parent.getlblOutputPathData().getText() + separator + business.replace(" ", "") + ".csv");
+            }
+            
+            File f = new File(path.toString());
+            if (f.exists() && !f.isDirectory()) {
+                for (int i = 0; i < storage.List.size(); i++) {
+                    sb.append(storage.List.get(i).Link);
+                    sb.append(',');
+                    sb.append("\"" + storage.List.get(i).Name + "\"");
+                    sb.append(',');
+                    sb.append("\"" + storage.List.get(i).Address + "\"");
+                    sb.append(',');
+                    sb.append("\"" + storage.List.get(i).Location + "\"");
+                    sb.append('\n');
+                }
+                Files.write(path, sb.toString().getBytes(), StandardOpenOption.APPEND);
+            }
+            else
+            {
+                sb.append("Link");
+                sb.append(',');
+                sb.append("\"Name\"");
+                sb.append(',');
+                sb.append("\"Address\"");
+                sb.append(',');
+                sb.append("\"Location\"");
+                sb.append('\n');
+                for (int i = 0; i < storage.List.size(); i++) {
+                    sb.append(storage.List.get(i).Link);
+                    sb.append(',');
+                    sb.append("\"" + storage.List.get(i).Name + "\"");
+                    sb.append(',');
+                    sb.append("\"" + storage.List.get(i).Address + "\"");
+                    sb.append(',');
+                    sb.append("\"" + storage.List.get(i).Location + "\"");
+                    sb.append('\n');
+                }
+                Files.write(path, sb.toString().getBytes(), StandardOpenOption.CREATE_NEW);
+            }
         } catch (IOException ex) {
             Logger.getLogger(YPScraperLogic.class.getName()).log(Level.SEVERE, null, ex);
         }
