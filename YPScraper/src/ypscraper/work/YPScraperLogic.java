@@ -189,12 +189,10 @@ public class YPScraperLogic {
         province = parent.getTextFieldLocation().getText();
 
         if (parent.outputFolder == null) {
-            JOptionPane.showMessageDialog(null, "Output folder not specified, program cannot continue.", "Select output folder path", JOptionPane.ERROR_MESSAGE);
-            continueWork = false;
-            running = false;
-            return;
+            File f = new File(".");
+            parent.outputFolder = new File(f.getAbsolutePath()).getParentFile();
+            parent.getlblOutputPathData().setText(parent.outputFolder.getName());
         }
-
 
         storage = new ScrapedItemsStorage(business, province);
         executorService = Executors.newSingleThreadExecutor();
@@ -356,7 +354,7 @@ public class YPScraperLogic {
 
     private int countPages() {
         Document doc = scrapePage();
-        String count = doc.select("span.contentControls-msg").select("strong").text().replace(",", "");
+        String count = doc.select("span.contentControls-msg").select("strong").first().text().replace(",", "");
         if (count.equalsIgnoreCase("")) {
             count = "0";
         }

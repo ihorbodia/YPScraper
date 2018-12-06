@@ -3,12 +3,14 @@ package ypscraper;
 import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Dimension;
+import java.awt.FileDialog;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.Properties;
 import java.util.concurrent.ExecutionException;
@@ -78,9 +80,10 @@ public class YPScraper extends JFrame {
         @Override
         public void actionPerformed(ActionEvent e) {
             System.out.println("SetOutputAction");
-            int returnVal = getJFolderChooser().showOpenDialog(YPScraper.this);
-            if (returnVal == JFileChooser.APPROVE_OPTION) {
-                outputFolder = getJFolderChooser().getSelectedFile();
+
+            String path = selectFolderDialog();
+            if (!path.equalsIgnoreCase("")) {
+                outputFolder = new File(path);
                 getlblOutputPathData().setText(outputFolder.getName());
                 logic.saveProperties();
             }
@@ -95,9 +98,22 @@ public class YPScraper extends JFrame {
         @Override
         public void actionPerformed(ActionEvent e) {
             System.out.println("Set postal codes action raised");
-            int returnVal = getJFilesChooser().showOpenDialog(YPScraper.this);
-            if (returnVal == JFileChooser.APPROVE_OPTION) {
-                inputLocationsFile = getJFilesChooser().getSelectedFile();
+            FileDialog dialog = new FileDialog(YPScraper.this, "Select File to Open", FileDialog.LOAD);
+            dialog.setFile("*.csv");
+            dialog.setFilenameFilter(new FilenameFilter() {
+                public boolean accept(File dir, String name) {
+                    String[] supportedFiles = {"csv", "CSV"};
+                    for (int i = 0; i < supportedFiles.length; i++) {
+                        if (name.endsWith(supportedFiles[i])) {
+                            return true;
+                        }
+                    }
+                    return false;
+                }
+            });
+            dialog.setVisible(true);
+            if (dialog.getFile() != null && !dialog.getFile().equalsIgnoreCase("")) {
+                inputLocationsFile = new File(dialog.getDirectory() + dialog.getFile());
                 getlblPostalCodesPathData().setText(inputLocationsFile.getName());
                 logic.getPostalCodes(inputLocationsFile.getAbsolutePath());
                 logic.saveProperties();
@@ -105,6 +121,34 @@ public class YPScraper extends JFrame {
         }
     }
    
+    private String selectFolderDialog() {
+        String osName = System.getProperty("os.name");
+        String result = "";
+        if (osName.equalsIgnoreCase("mac os x")) {
+            FileDialog chooser = new FileDialog(YPScraper.this, "Select folder");
+            System.setProperty("apple.awt.fileDialogForDirectories", "true");
+            chooser.setVisible(true);
+
+            System.setProperty("apple.awt.fileDialogForDirectories", "false");
+            if (chooser.getDirectory() != null) {
+                String folderName = chooser.getDirectory();
+                folderName += chooser.getFile();
+                result = folderName;
+            }
+        } else {
+            JFileChooser chooser = new JFileChooser();
+            chooser.setDialogTitle("Select Target Folder");
+            chooser.setFileSelectionMode(chooser.DIRECTORIES_ONLY);
+
+            int returnVal = chooser.showDialog(YPScraper.this, "Select folder");
+            if (returnVal == JFileChooser.APPROVE_OPTION) {
+                File userSelectedFolder = chooser.getSelectedFile();
+                String folderName = userSelectedFolder.getAbsolutePath();
+                result = folderName;
+            }
+        }
+        return result;
+    }
 
     public class StopAction implements ActionListener {
 
@@ -179,7 +223,7 @@ public class YPScraper extends JFrame {
     }
 
     public YPScraper() {
-        setTitle("YP Crawler CA");
+        setTitle("YP Crawler CA v1.0");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setBounds(100, 100, 450, 300);
         add(PanelMain());
@@ -437,6 +481,7 @@ public class YPScraper extends JFrame {
     private JFileChooser getJFolderChooser() {
         if (jfolderChooser == null) {
             jfolderChooser = new JFileChooser();
+            jfolderChooser.setAcceptAllFileFilterUsed(false);
             jfolderChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
         }
         return jfolderChooser;
