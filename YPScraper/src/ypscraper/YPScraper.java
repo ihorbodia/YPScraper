@@ -14,7 +14,6 @@ import java.util.Properties;
 import java.util.concurrent.ExecutionException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
@@ -50,6 +49,9 @@ public class YPScraper extends JFrame {
     private JFileChooser jfileChooser;
     private JFileChooser jfolderChooser;
     
+    public File outputFolder;
+    public File inputLocationsFile;
+    
     YPScraperLogic logic;
     public Properties properties = new Properties();
 
@@ -61,7 +63,7 @@ public class YPScraper extends JFrame {
         @Override
         public void actionPerformed(ActionEvent e) {
             System.out.println("Start");
-                logic.getPostalCodes(getlblPostalCodesPathData().getText());
+                logic.getPostalCodes(inputLocationsFile.getAbsolutePath());
                 logic.Run(true);
                 logic.saveProperties();
                 logic.removeOldFileIfExists();
@@ -78,8 +80,8 @@ public class YPScraper extends JFrame {
             System.out.println("SetOutputAction");
             int returnVal = getJFolderChooser().showSaveDialog(YPScraper.this);
             if (returnVal == JFileChooser.APPROVE_OPTION) {
-                File folder = getJFolderChooser().getSelectedFile();
-                getlblOutputPathData().setText(folder.getPath());
+                outputFolder = getJFolderChooser().getSelectedFile();
+                getlblOutputPathData().setText(outputFolder.getName());
             }
         }
     }
@@ -95,7 +97,7 @@ public class YPScraper extends JFrame {
             int returnVal = getJFilesChooser().showSaveDialog(YPScraper.this);
             if (returnVal == JFileChooser.APPROVE_OPTION) {
                 File folder = getJFilesChooser().getSelectedFile();
-                getlblPostalCodesPathData().setText(folder.getName());
+                getlblPostalCodesPathData().setText(folder.getAbsolutePath());
                 logic.getPostalCodes(getlblPostalCodesPathData().getText());
             }
         }
@@ -140,7 +142,7 @@ public class YPScraper extends JFrame {
     public static void main(String[] args) throws IOException {
         YPScraper frame = new YPScraper();
         frame.pack();
-        frame.setSize(new Dimension(600, 200));
+        frame.setSize(new Dimension(600, 180));
         frame.setResizable(false);
         frame.setVisible(true);
        

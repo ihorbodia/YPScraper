@@ -14,6 +14,8 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -110,8 +112,8 @@ public class YPScraperLogic {
             if (!isMultipleSearch) {
                 parent.properties.setProperty("province", province);
             }
-            parent.properties.setProperty("outputFolder", parent.getlblOutputPathData().getText());
-            parent.properties.setProperty("csvPostalCodesFile", parent.getlblPostalCodesPathData().getText());
+            parent.properties.setProperty("outputFolder", parent.outputFolder.getAbsolutePath());
+            parent.properties.setProperty("csvPostalCodesFile", parent.inputLocationsFile.getAbsolutePath());
             parent.properties.setProperty("running", String.valueOf(running));
             parent.properties.setProperty("postalCodeIndex", Integer.toString(postalCodeIndex));
             parent.properties.store(output, null);
@@ -141,10 +143,16 @@ public class YPScraperLogic {
             parent.getTextFieldLocation().setText(province);
 
             String path = parent.properties.get("outputFolder").toString();
-            parent.getlblOutputPathData().setText(path);
+            if (!path.equalsIgnoreCase("")) {
+                parent.outputFolder = new File(path);
+                parent.getlblOutputPathData().setText(parent.outputFolder.getName());
+            }
             
             String csvPath = parent.properties.get("csvPostalCodesFile").toString();
-            parent.getlblPostalCodesPathData().setText(csvPath);
+            if (!csvPath.equalsIgnoreCase("")) {
+                parent.inputLocationsFile = new File(csvPath);
+                parent.getlblPostalCodesPathData().setText(parent.inputLocationsFile.getName());
+            }
             
             String postalCodeIndexStr = parent.properties.get("postalCodeIndex").toString();
             postalCodeIndex = Integer.parseInt(postalCodeIndexStr);
@@ -168,18 +176,13 @@ public class YPScraperLogic {
     }
     
     public void continueRun() {
-        parent.getBtnStop().setEnabled(true);
-        parent.getBtnStart().setEnabled(false);
-        parent.getBtnChooseCSVPostaCodesPath().setEnabled(false);
-        parent.getBtnOutputPath().setEnabled(false);
-        getPostalCodes(parent.getlblPostalCodesPathData().getText());
         Run(false);
     }
 
     public void Run(boolean isStartRun) {
         business = parent.getTextFieldBusiness().getText();
         province = parent.getTextFieldLocation().getText();
-
+        getPostalCodes(parent.inputLocationsFile.getAbsolutePath());
         storage = new ScrapedItemsStorage(business, province);
         executorService = Executors.newSingleThreadExecutor();
         future = executorService.submit(new Runnable() {
@@ -255,10 +258,10 @@ public class YPScraperLogic {
     }
     
     public void removeOldFileIfExists() {
-        File f = new File(parent.getlblOutputPathData().toString());
-            if (f.exists() && !f.isDirectory()) {
-                f.delete();
-            }
+        File f = parent.outputFolder;
+        if (f.exists() && !f.isDirectory()) {
+            f.delete();
+        }
     }
 
     private void parseCurrentPage(Document doc) {
@@ -359,10 +362,10 @@ public class YPScraperLogic {
         try {
             Path path = null;
             if (!parent.getTextFieldLocation().getText().equalsIgnoreCase("")) {
-                path = Paths.get(parent.getlblOutputPathData().getText() + separator + business.replace(" ", "") + "_" + province + ".csv");
+                path = Paths.get(parent.outputFolder.getAbsolutePath() + separator + business.replace(" ", "") + "_" + province + ".csv");
             }
             else{
-                path = Paths.get(parent.getlblOutputPathData().getText() + separator + business.replace(" ", "") + ".csv");
+                path = Paths.get(parent.outputFolder.getAbsolutePath() + separator + business.replace(" ", "") + ".csv");
             }
             
             File f = new File(path.toString());
@@ -377,7 +380,8 @@ public class YPScraperLogic {
                     sb.append("\"" + storage.List.get(i).Location + "\"");
                     sb.append('\n');
                 }
-                Files.write(path, sb.toString().getBytes(), StandardOpenOption.APPEND);
+                Files.createDirectories(path.getParent());
+                Files.write(path, sb.toString().getBytes(), StandardOpenOption.WRITE, StandardOpenOption.APPEND);
             }
             else
             {
@@ -399,13 +403,22 @@ public class YPScraperLogic {
                     sb.append("\"" + storage.List.get(i).Location + "\"");
                     sb.append('\n');
                 }
-                Files.write(path, sb.toString().getBytes(), StandardOpenOption.CREATE_NEW);
+                Files.createDirectories(path.getParent());
+                Files.write(path, sb.toString().getBytes(), StandardOpenOption.WRITE, StandardOpenOption.CREATE);
             }
         } catch (IOException ex) {
             Logger.getLogger(YPScraperLogic.class.getName()).log(Level.SEVERE, null, ex);
-            JOptionPane.showMessageDialog(null, "Something wrong with output file: \n\n"+ex.getMessage(), "Data wasn't saved ", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(null, "Something wrong with output file: \n"+getPrintStacktrace(ex), "Data wasn't saved ", JOptionPane.ERROR_MESSAGE);
         }
         storage.List.clear();
+    }
+    
+    private String getPrintStacktrace(Exception ex) {
+        StringWriter writer = new StringWriter();
+        PrintWriter printWriter = new PrintWriter(writer);
+        ex.printStackTrace(printWriter);
+        printWriter.flush();
+        return writer.toString();
     }
     
     public void getPostalCodes(String path){
