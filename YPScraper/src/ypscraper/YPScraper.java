@@ -56,17 +56,17 @@ public class YPScraper extends JFrame {
     public Properties properties = new Properties();
 
     public class StartAction implements ActionListener {
-
+        
         public StartAction() {
         }
-
+        
         @Override
         public void actionPerformed(ActionEvent e) {
             System.out.println("Start");
-                logic.getPostalCodes(inputLocationsFile.getAbsolutePath());
-                logic.Run(true);
-                logic.saveProperties();
-                logic.removeOldFileIfExists();
+            getTextFieldStatus().setText("Starting...");
+            logic.Run(true);
+            logic.saveProperties();
+            logic.removeOldFileIfExists();
         }
     }
     
@@ -78,10 +78,11 @@ public class YPScraper extends JFrame {
         @Override
         public void actionPerformed(ActionEvent e) {
             System.out.println("SetOutputAction");
-            int returnVal = getJFolderChooser().showSaveDialog(YPScraper.this);
+            int returnVal = getJFolderChooser().showOpenDialog(YPScraper.this);
             if (returnVal == JFileChooser.APPROVE_OPTION) {
                 outputFolder = getJFolderChooser().getSelectedFile();
                 getlblOutputPathData().setText(outputFolder.getName());
+                logic.saveProperties();
             }
         }
     }
@@ -94,11 +95,12 @@ public class YPScraper extends JFrame {
         @Override
         public void actionPerformed(ActionEvent e) {
             System.out.println("Set postal codes action raised");
-            int returnVal = getJFilesChooser().showSaveDialog(YPScraper.this);
+            int returnVal = getJFilesChooser().showOpenDialog(YPScraper.this);
             if (returnVal == JFileChooser.APPROVE_OPTION) {
-                File folder = getJFilesChooser().getSelectedFile();
-                getlblPostalCodesPathData().setText(folder.getAbsolutePath());
-                logic.getPostalCodes(getlblPostalCodesPathData().getText());
+                inputLocationsFile = getJFilesChooser().getSelectedFile();
+                getlblPostalCodesPathData().setText(inputLocationsFile.getName());
+                logic.getPostalCodes(inputLocationsFile.getAbsolutePath());
+                logic.saveProperties();
             }
         }
     }
@@ -145,7 +147,7 @@ public class YPScraper extends JFrame {
         frame.setSize(new Dimension(600, 180));
         frame.setResizable(false);
         frame.setVisible(true);
-       
+        System.setProperty("apple.awt.fileDialogForDirectories", "true");
     }
 
     private void initActions() {
@@ -156,7 +158,8 @@ public class YPScraper extends JFrame {
         getBtnChooseCSVPostaCodesPath().addActionListener(new SetCSVPostaCodesAction());
         Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
             public void run() {
-                if (!logic.future.isDone() && logic.future != null) {
+                logic.saveProperties();
+                if (logic.future != null && !logic.future.isDone()) {
                     logic.saveDataToFile();
                 }
             }
@@ -262,8 +265,8 @@ public class YPScraper extends JFrame {
 
         GridBagConstraints gbc_textFieldStatus = new GridBagConstraints();
         gbc_textFieldStatus.insets = new Insets(0, 0, 5, 5);
-        gbc_lblStatus.anchor = GridBagConstraints.WEST;
-        gbc_textFieldStatus.gridwidth = 2;
+        gbc_textFieldStatus.anchor = GridBagConstraints.WEST;
+        gbc_textFieldStatus.gridwidth = 5;
         gbc_textFieldStatus.gridx = 1;
         gbc_textFieldStatus.gridy = 5;
         panel.add(getTextFieldStatus(), gbc_textFieldStatus);
