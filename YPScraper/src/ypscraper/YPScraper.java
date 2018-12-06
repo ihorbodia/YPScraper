@@ -156,7 +156,7 @@ public class YPScraper extends JFrame {
         getBtnChooseCSVPostaCodesPath().addActionListener(new SetCSVPostaCodesAction());
         Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
             public void run() {
-                if (!logic.future.isDone()) {
+                if (!logic.future.isDone() && logic.future != null) {
                     logic.saveDataToFile();
                 }
             }
