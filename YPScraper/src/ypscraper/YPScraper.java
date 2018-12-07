@@ -10,7 +10,6 @@ import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
-import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.Properties;
 import java.util.concurrent.ExecutionException;
@@ -98,21 +97,9 @@ public class YPScraper extends JFrame {
         @Override
         public void actionPerformed(ActionEvent e) {
             System.out.println("Set postal codes action raised");
-            FileDialog dialog = new FileDialog(YPScraper.this, "Select File to Open", FileDialog.LOAD);
-            dialog.setFile("*.csv");
-            dialog.setFilenameFilter(new FilenameFilter() {
-                public boolean accept(File dir, String name) {
-                    String[] supportedFiles = {"csv", "CSV"};
-                    for (int i = 0; i < supportedFiles.length; i++) {
-                        if (name.endsWith(supportedFiles[i])) {
-                            return true;
-                        }
-                    }
-                    return false;
-                }
-            });
+            FileDialog dialog = new FileDialog(YPScraper.this, "Select File to Open");
             dialog.setVisible(true);
-            if (dialog.getFile() != null && !dialog.getFile().equalsIgnoreCase("")) {
+            if (dialog.getFile() != null && !dialog.getFile().equalsIgnoreCase("") && dialog.getFile().toLowerCase().endsWith(".csv")) {
                 inputLocationsFile = new File(dialog.getDirectory() + dialog.getFile());
                 getlblPostalCodesPathData().setText(inputLocationsFile.getName());
                 logic.getPostalCodes(inputLocationsFile.getAbsolutePath());
@@ -188,7 +175,7 @@ public class YPScraper extends JFrame {
     public static void main(String[] args) throws IOException {
         YPScraper frame = new YPScraper();
         frame.pack();
-        frame.setSize(new Dimension(600, 180));
+        frame.setSize(new Dimension(600, 210));
         frame.setResizable(false);
         frame.setVisible(true);
         System.setProperty("apple.awt.fileDialogForDirectories", "true");
@@ -223,7 +210,7 @@ public class YPScraper extends JFrame {
     }
 
     public YPScraper() {
-        setTitle("YP Crawler CA v1.0");
+        setTitle("YP Crawler CA v1.3");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setBounds(100, 100, 450, 300);
         add(PanelMain());
@@ -316,28 +303,28 @@ public class YPScraper extends JFrame {
         panel.add(getTextFieldStatus(), gbc_textFieldStatus);
 
         GridBagConstraints gbc_btnStart = new GridBagConstraints();
-        gbc_btnStart.insets = new Insets(0, 0, 0, 5);
-        gbc_btnStart.anchor = GridBagConstraints.EAST;
+        gbc_btnStart.insets = new Insets(25, 0, 5, 5);
+        gbc_btnStart.anchor = GridBagConstraints.SOUTHEAST;
         gbc_btnStart.gridx = 0;
-        gbc_btnStart.gridy = 6;
+        gbc_btnStart.gridy = 8;
         panel.add(getBtnStart(), gbc_btnStart);
 
         GridBagConstraints gbc_btnStop = new GridBagConstraints();
-        gbc_btnStop.insets = new Insets(0, 0, 0, 5);
+        gbc_btnStop.insets = new Insets(25, 0, 5, 5);
         gbc_btnStop.gridx = 7;
-        gbc_btnStop.gridy = 6;
+        gbc_btnStop.gridy = 8;
         panel.add(getBtnStop(), gbc_btnStop);
         
         GridBagConstraints gbc_btnSetOutputFolder = new GridBagConstraints();
-        gbc_btnSetOutputFolder.insets = new Insets(0, 0, 0, 5);
+        gbc_btnSetOutputFolder.insets = new Insets(25, 0, 5, 5);
         gbc_btnSetOutputFolder.gridx = 1;
-        gbc_btnSetOutputFolder.gridy = 6;
+        gbc_btnSetOutputFolder.gridy = 8;
         panel.add(getBtnOutputPath(), gbc_btnSetOutputFolder);
 
         GridBagConstraints gbc_btnSetCSVPostaCodesFolder = new GridBagConstraints();
-        gbc_btnSetCSVPostaCodesFolder.insets = new Insets(0, 0, 0, 5);
+        gbc_btnSetCSVPostaCodesFolder.insets = new Insets(25, 0, 5, 5);
         gbc_btnSetCSVPostaCodesFolder.gridx = 2;
-        gbc_btnSetCSVPostaCodesFolder.gridy = 6;
+        gbc_btnSetCSVPostaCodesFolder.gridy = 8;
         panel.add(getBtnChooseCSVPostaCodesPath(), gbc_btnSetCSVPostaCodesFolder);
         
         panel.setVisible(true);
