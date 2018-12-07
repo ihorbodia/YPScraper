@@ -216,7 +216,7 @@ public class YPScraperLogic {
                             prepareURL(i);
                             Document doc = scrapePage();
                             parseCurrentPage(doc);
-
+                            updateOneLocationSearchGUI(false);
                         }
                         updateOneLocationSearchGUI(true);
                         saveDataToFile();
@@ -240,6 +240,7 @@ public class YPScraperLogic {
                                 prepareURL(i);
                                 Document doc = scrapePage();
                                 parseCurrentPage(doc);
+                                updateMultipleSearchGUI(false);
                             }
                             postalCodeIndex++;
                             saveProperties();
@@ -278,7 +279,8 @@ public class YPScraperLogic {
                 @Override
                 public void run() {
                     if (postalCodeIndex <= postalCodes.length) {
-                        parent.getTextFieldStatus().setText(postalCodeIndex + "/" + postalCodes.length+ " locations processed. " + storage.List.size() + " items scraped.");
+                        int postalCodeItem = postalCodeIndex + 1;
+                        parent.getTextFieldStatus().setText(postalCodeItem + "/" + postalCodes.length+ " locations processed. " + storage.List.size() + " items scraped.");
                     }
                     if (isFinished) {
                         postalCodeIndex--;
