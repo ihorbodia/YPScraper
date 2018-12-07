@@ -94,11 +94,13 @@ public class YPScraperLogic {
             propertiesFileTemp.delete();
         } catch (IOException io) {
             io.printStackTrace();
+            System.out.println(io.getMessage());
         } finally {
             if (output != null) {
                 try {
                     output.close();
                 } catch (IOException e) {
+                    System.out.println(e.getMessage());
                     e.printStackTrace();
                 }
             }
@@ -124,11 +126,13 @@ public class YPScraperLogic {
             parent.properties.store(output, null);
         } catch (IOException io) {
             io.printStackTrace();
+            System.out.println(io.getMessage());
         } finally {
             if (output != null) {
                 try {
                     output.close();
                 } catch (IOException e) {
+                    System.out.println(e.getMessage());
                     e.printStackTrace();
                 }
             }
@@ -168,12 +172,14 @@ public class YPScraperLogic {
                 continueRun();
             }
         } catch (IOException ex) {
+            System.out.println(ex.getMessage());
             ex.printStackTrace();
         } finally {
             if (input != null) {
                 try {
                     input.close();
                 } catch (IOException e) {
+                    System.out.println(e.getMessage());
                     e.printStackTrace();
                 }
             }
@@ -337,6 +343,7 @@ public class YPScraperLogic {
             result = res.substring(res.indexOf("redirect=") + 1);
             result = result.replace("edirect=", "");
         } catch (UnsupportedEncodingException ex) {
+            System.out.println(ex.getMessage());
             Logger.getLogger(YPScraperLogic.class.getName()).log(Level.SEVERE, null, ex);
         }
         return result;
@@ -347,6 +354,7 @@ public class YPScraperLogic {
         try {
             doc = Jsoup.connect(currentURL).get();
         } catch (IOException ex) {
+            System.out.println(ex.getMessage());
             Logger.getLogger(YPScraperLogic.class.getName()).log(Level.SEVERE, null, ex);
         }
         return doc;
@@ -354,10 +362,15 @@ public class YPScraperLogic {
 
     private int countPages() {
         Document doc = scrapePage();
-        String count = doc.select("span.contentControls-msg").select("strong").first().text().replace(",", "");
+        Element countElement = doc.select("span.contentControls-msg").select("strong").first();
+        String count= "";
+        if (countElement != null) {
+            count = countElement.text().replace(",", "");
+        }
         if (count.equalsIgnoreCase("")) {
             count = "0";
         }
+
         float fcount = Float.parseFloat(count);
         int icount = Integer.parseInt(count);
 
@@ -453,6 +466,7 @@ public class YPScraperLogic {
                 Files.write(path, sb.toString().getBytes(), StandardOpenOption.WRITE, StandardOpenOption.CREATE);
             }
         } catch (IOException ex) {
+            System.out.println(ex.getMessage());
             Logger.getLogger(YPScraperLogic.class.getName()).log(Level.SEVERE, null, ex);
             JOptionPane.showMessageDialog(null, "Something wrong with output file: \n"+getPrintStacktrace(ex), "Data wasn't saved ", JOptionPane.ERROR_MESSAGE);
         }
@@ -488,10 +502,12 @@ public class YPScraperLogic {
         postalCodes = result.toArray(new String[0]);
         } catch (FileNotFoundException e) {
             e.printStackTrace();
+            System.out.println(e.getMessage());
             JOptionPane.showMessageDialog(null, "Something wrong with input CSV file. Try to check path and start again.", "Input csv file problem", JOptionPane.ERROR_MESSAGE);
             continueWork = false;
         } catch (IOException e) {
             e.printStackTrace();
+            System.out.println(e.getMessage());
             JOptionPane.showMessageDialog(null, "Something wrong with input CSV file.", "Input csv file problem", JOptionPane.ERROR_MESSAGE);
             continueWork = false;
         } finally {
@@ -499,6 +515,7 @@ public class YPScraperLogic {
                 try {
                     br.close();
                 } catch (IOException e) {
+                    System.out.println(e.getMessage());
                     e.printStackTrace();
                 }
             }
