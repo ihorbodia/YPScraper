@@ -372,7 +372,7 @@ public class YPScraperLogic {
     private Document scrapePage() {
         Document doc = null;
         try {
-            doc = Jsoup.connect(currentURL).get();
+            doc = Jsoup.connect(currentURL).timeout(10 * 1000).get();
         } catch (IOException ex) {
             System.out.println(ex.getMessage());
             Logger.getLogger(YPScraperLogic.class.getName()).log(Level.SEVERE, null, ex);
