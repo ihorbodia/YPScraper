@@ -17,6 +17,7 @@ import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
+import java.net.SocketTimeoutException;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
@@ -29,7 +30,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 import org.apache.commons.io.FilenameUtils;
@@ -50,9 +50,7 @@ public class YPScraperLogic {
     private String business;
     private String currentURL;
     public boolean continueWork = false;
-    private int currentPageNumber = 1;
     private String CABaseURLPart = "https://www.yellowpages.ca/search/si";
-    private String CAMainURL = "https://www.yellowpages.ca";
     private String province;
     String separator = File.separator;
     ExecutorService executorService;
@@ -98,6 +96,7 @@ public class YPScraperLogic {
         } catch (IOException io) {
             io.printStackTrace();
             System.out.println(io.getMessage());
+            parent.logger.log(Level.SEVERE, null, io);
         } finally {
             if (output != null) {
                 try {
@@ -105,6 +104,7 @@ public class YPScraperLogic {
                 } catch (IOException e) {
                     System.out.println(e.getMessage());
                     e.printStackTrace();
+                    parent.logger.log(Level.SEVERE, null, e);
                 }
             }
         }
@@ -130,6 +130,7 @@ public class YPScraperLogic {
         } catch (IOException io) {
             io.printStackTrace();
             System.out.println(io.getMessage());
+            parent.logger.log(Level.SEVERE, null, io);
         } finally {
             if (output != null) {
                 try {
@@ -137,6 +138,7 @@ public class YPScraperLogic {
                 } catch (IOException e) {
                     System.out.println(e.getMessage());
                     e.printStackTrace();
+                    parent.logger.log(Level.SEVERE, null, e);
                 }
             }
         }
@@ -189,6 +191,7 @@ public class YPScraperLogic {
         } catch (IOException ex) {
             System.out.println(ex.getMessage());
             ex.printStackTrace();
+            parent.logger.log(Level.SEVERE, null, ex);
         } finally {
             if (input != null) {
                 try {
@@ -196,6 +199,7 @@ public class YPScraperLogic {
                 } catch (IOException e) {
                     System.out.println(e.getMessage());
                     e.printStackTrace();
+                    parent.logger.log(Level.SEVERE, null, e);
                 }
             }
         }
@@ -221,10 +225,9 @@ public class YPScraperLogic {
             public void run() {
                 continueWork = true;
                 running = true;
-                currentPageNumber = 1;
                 if (!province.equalsIgnoreCase("")) {
                     isMultipleSearch = false;
-                    prepareURL(currentPageNumber);
+                    prepareURL(1);
                     int pages = countPages();
                     updateOneLocationSearchGUI(false);
                     for (int i = 2; i <= pages; i++) {
@@ -251,7 +254,7 @@ public class YPScraperLogic {
                     getPostalCodes(parent.inputLocationsFile.getAbsolutePath());
                     isMultipleSearch = true;
                     while (continueWork) {
-                        prepareURL(currentPageNumber);
+                        prepareURL(1);
                         int pages = countPages();
                         updateMultipleSearchGUI(false);
                         for (int i = 2; i <= pages; i++) {
@@ -283,6 +286,7 @@ public class YPScraperLogic {
                 while (true) {
                     if (future.isDone()) {
                         System.out.println("Program: Finished");
+                        parent.logger.log(Level.INFO, "Program: Finished");
                         break;
                     }
                 }
@@ -320,11 +324,11 @@ public class YPScraperLogic {
                 @Override
                 public void run() {
                     if (isFinished) {
-                        parent.getTextFieldStatus().setText("Finished. "+storage.List.size() + " items scraped.");
+                        parent.getTextFieldStatus().setText("Finished. "+scrapedItemsCount + " items scraped.");
                     }
                     else
                     {
-                        parent.getTextFieldStatus().setText(storage.List.size() + " items scraped.");
+                        parent.getTextFieldStatus().setText(scrapedItemsCount + " items scraped.");
                     }
                 }
             });
@@ -343,7 +347,7 @@ public class YPScraperLogic {
             try {
                 Files.deleteIfExists(path);
             } catch (IOException ex) {
-                Logger.getLogger(YPScraperLogic.class.getName()).log(Level.SEVERE, null, ex);
+                parent.logger.log(Level.SEVERE, null, ex);
             }
         }
     }
@@ -351,6 +355,7 @@ public class YPScraperLogic {
     private void parseCurrentPage(Document doc) {
         if (doc == null) {
             System.out.println("Return: parseCurrentPage");
+            parent.logger.log(Level.WARNING, "Scraped document is null");
             return;
         }
         Element items = (Element) doc.select("div.resultList").first().childNode(1);
@@ -362,7 +367,7 @@ public class YPScraperLogic {
             storage.List.add(new ScrapedItem(title, address.replace("Get directions", ""), processLink(link), province));
         }
         scrapedItemsCount += els.size();
-        System.out.println(storage.List.size());
+        parent.logger.log(Level.INFO, String.valueOf(storage.List.size() +" Location: "+ province +" Link: "+ currentURL));
     }
 
     private String processLink(String link) {
@@ -376,7 +381,7 @@ public class YPScraperLogic {
             result = result.replace("edirect=", "");
         } catch (UnsupportedEncodingException ex) {
             System.out.println(ex.getMessage());
-            Logger.getLogger(YPScraperLogic.class.getName()).log(Level.SEVERE, null, ex);
+            parent.logger.log(Level.SEVERE, null, ex);
         }
         return result;
     }
@@ -384,10 +389,18 @@ public class YPScraperLogic {
     private Document scrapePage() {
         Document doc = null;
         try {
-            doc = Jsoup.connect(currentURL).timeout(10 * 1000).get();
-        } catch (IOException ex) {
+            doc = Jsoup
+            .connect(currentURL)
+            .userAgent("Mozilla/5.0")
+            .timeout(0)
+            .get();
+        } catch (Error  ex) {
             System.out.println(ex.getMessage());
-            Logger.getLogger(YPScraperLogic.class.getName()).log(Level.SEVERE, null, ex);
+            parent.logger.log(Level.SEVERE, null, ex);
+            parent.logger.log(Level.INFO, String.valueOf(storage.List.size() +" Location: "+ province +" Link: "+ currentURL));
+        } catch (IOException ex) {
+            parent.logger.log(Level.SEVERE, null, ex);
+            parent.logger.log(Level.INFO, String.valueOf(storage.List.size() +" Location: "+ province +" Link: "+ currentURL));
         }
         return doc;
     }
@@ -476,7 +489,7 @@ public class YPScraperLogic {
             Files.createDirectories(path.getParent());
             Files.write(path, sb.toString().getBytes(), StandardOpenOption.WRITE, StandardOpenOption.CREATE);
         } catch (IOException ex) {
-            Logger.getLogger(YPScraperLogic.class.getName()).log(Level.SEVERE, null, ex);
+            parent.logger.log(Level.SEVERE, null, ex);
         }
     }
 
@@ -506,7 +519,7 @@ public class YPScraperLogic {
             Files.write(path, sb.toString().getBytes(), StandardOpenOption.WRITE, StandardOpenOption.APPEND);
         } catch (IOException ex) {
             System.out.println(ex.getMessage());
-            Logger.getLogger(YPScraperLogic.class.getName()).log(Level.SEVERE, null, ex);
+            parent.logger.log(Level.SEVERE, null, ex);
             JOptionPane.showMessageDialog(null, "Something wrong with output file: \n" + getPrintStacktrace(ex), "Data wasn't saved ", JOptionPane.ERROR_MESSAGE);
         }
         storage.List.clear();
@@ -539,12 +552,12 @@ public class YPScraperLogic {
             }
             postalCodes = result.toArray(new String[0]);
         } catch (FileNotFoundException e) {
-            e.printStackTrace();
+            parent.logger.log(Level.SEVERE, null, e);
             System.out.println(e.getMessage());
             JOptionPane.showMessageDialog(null, "Something wrong with input CSV file. Try to check path and start again.", "Input csv file problem", JOptionPane.ERROR_MESSAGE);
             continueWork = false;
         } catch (IOException e) {
-            e.printStackTrace();
+            parent.logger.log(Level.SEVERE, null, e);
             System.out.println(e.getMessage());
             JOptionPane.showMessageDialog(null, "Something wrong with input CSV file.", "Input csv file problem", JOptionPane.ERROR_MESSAGE);
             continueWork = false;
@@ -554,7 +567,7 @@ public class YPScraperLogic {
                     br.close();
                 } catch (IOException e) {
                     System.out.println(e.getMessage());
-                    e.printStackTrace();
+                    parent.logger.log(Level.SEVERE, null, e);
                 }
             }
         }

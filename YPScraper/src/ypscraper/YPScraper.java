@@ -14,6 +14,7 @@ import java.io.IOException;
 import java.util.Properties;
 import java.util.concurrent.ExecutionException;
 import java.util.logging.Level;
+import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 import javax.swing.JButton;
 import javax.swing.JFileChooser;
@@ -24,6 +25,7 @@ import javax.swing.JProgressBar;
 import javax.swing.JSpinner;
 import javax.swing.JTextField;
 import javax.swing.border.EmptyBorder;
+import ypscraper.gui.WindowHandler;
 import ypscraper.work.YPScraperLogic;
 
 
@@ -53,6 +55,10 @@ public class YPScraper extends JFrame {
     public File outputFolder;
     public File inputLocationsFile;
     
+    private WindowHandler handler = null;
+
+    public Logger logger = null;
+    
     YPScraperLogic logic;
     public Properties properties = new Properties();
 
@@ -64,6 +70,7 @@ public class YPScraper extends JFrame {
         @Override
         public void actionPerformed(ActionEvent e) {
             System.out.println("Start");
+            logMessage("Starting...");
             getTextFieldStatus().setText("Starting...");
             logic.removeOldFileIfExists();
             logic.createOutputFile();
@@ -179,7 +186,9 @@ public class YPScraper extends JFrame {
         frame.setSize(new Dimension(600, 210));
         frame.setResizable(false);
         frame.setVisible(true);
-        System.setProperty("apple.awt.fileDialogForDirectories", "true");
+        WindowHandler h = WindowHandler.getInstance();
+        LogRecord r = new LogRecord(Level.WARNING, "Start logger...");
+        h.publish(r);
     }
 
     private void initActions() {
@@ -198,15 +207,25 @@ public class YPScraper extends JFrame {
         }));
     }
     
+    private void initLogger(){
+        handler = WindowHandler.getInstance();
+        logger = Logger.getLogger("logging.handler");
+        logger.addHandler(handler);
+    }
+    
+    public void logMessage(String message) {
+        logger.info(message);
+    }
+    
     private void initLogic() {
         try {
             logic = new YPScraperLogic(YPScraper.this);
         } catch (IOException ex) {
-            Logger.getLogger(YPScraper.class.getName()).log(Level.SEVERE, null, ex);
+            logger.log(Level.SEVERE, null, ex);
         } catch (InterruptedException ex) {
-            Logger.getLogger(YPScraper.class.getName()).log(Level.SEVERE, null, ex);
+            logger.log(Level.SEVERE, null, ex);
         } catch (ExecutionException ex) {
-            Logger.getLogger(YPScraper.class.getName()).log(Level.SEVERE, null, ex);
+            logger.log(Level.SEVERE, null, ex);
         }
     }
 
@@ -218,6 +237,7 @@ public class YPScraper extends JFrame {
         setContentPane(PanelMain());
         initLogic();
         initActions();
+        initLogger();
     }
 
     public JPanel PanelMain() {
