@@ -65,9 +65,10 @@ public class YPScraper extends JFrame {
         public void actionPerformed(ActionEvent e) {
             System.out.println("Start");
             getTextFieldStatus().setText("Starting...");
+            logic.removeOldFileIfExists();
+            logic.createOutputFile();
             logic.Run(true);
             logic.saveProperties();
-            logic.removeOldFileIfExists();
         }
     }
     

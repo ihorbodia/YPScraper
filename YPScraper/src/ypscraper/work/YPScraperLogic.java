@@ -17,7 +17,9 @@ import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
+import java.nio.charset.Charset;
 import java.nio.file.Files;
+import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
@@ -59,6 +61,7 @@ public class YPScraperLogic {
     boolean isMultipleSearch;
     public boolean running;
     int postalCodeIndex;
+    int scrapedItemsCount;
 
     String firstPage;
     InputStream input = null;
@@ -207,47 +210,54 @@ public class YPScraperLogic {
                 continueWork = true;
                 running = true;
                 currentPageNumber = 1;
-                    if (!province.equalsIgnoreCase("")) {
-                        isMultipleSearch = false;
+                if (!province.equalsIgnoreCase("")) {
+                    isMultipleSearch = false;
+                    prepareURL(currentPageNumber);
+                    int pages = countPages();
+                    updateOneLocationSearchGUI(false);
+                    for (int i = 2; i <= pages; i++) {
+                        prepareURL(i);
+                        Document doc = scrapePage();
+                        parseCurrentPage(doc);
+                        updateOneLocationSearchGUI(false);
+                        if (storage.List.size() > 10000) {
+                            saveDataToFile();
+                        }
+                    }
+                    updateOneLocationSearchGUI(true);
+                    saveDataToFile();
+                } else {
+                    if (isStartRun) {
+                        postalCodeIndex = 0;
+                    }
+                    if (parent.inputLocationsFile == null) {
+                        JOptionPane.showMessageDialog(null, "Input CSV file not specified, program cannot continue.", "Select input locations list", JOptionPane.ERROR_MESSAGE);
+                        continueWork = false;
+                        running = false;
+                        return;
+                    }
+                    getPostalCodes(parent.inputLocationsFile.getAbsolutePath());
+                    isMultipleSearch = true;
+                    while (continueWork) {
                         prepareURL(currentPageNumber);
                         int pages = countPages();
-                        updateOneLocationSearchGUI(false);
+                        updateMultipleSearchGUI(false);
                         for (int i = 2; i <= pages; i++) {
                             prepareURL(i);
                             Document doc = scrapePage();
                             parseCurrentPage(doc);
-                            updateOneLocationSearchGUI(false);
-                        }
-                        updateOneLocationSearchGUI(true);
-                        saveDataToFile();
-                    } else {
-                        if (isStartRun) {
-                            postalCodeIndex = 0;
-                        }
-                        if (parent.inputLocationsFile == null) {
-                            JOptionPane.showMessageDialog(null, "Input CSV file not specified, program cannot continue.", "Select input locations list", JOptionPane.ERROR_MESSAGE);
-                            continueWork = false;
-                            running = false;
-                            return;
-                        }
-                        getPostalCodes(parent.inputLocationsFile.getAbsolutePath());
-                        isMultipleSearch = true;
-                        while (continueWork) {
-                            prepareURL(currentPageNumber);
-                            int pages = countPages();
                             updateMultipleSearchGUI(false);
-                            for (int i = 2; i <= pages; i++) {
-                                prepareURL(i);
-                                Document doc = scrapePage();
-                                parseCurrentPage(doc);
-                                updateMultipleSearchGUI(false);
+                            if (storage.List.size() > 10000) {
+                                saveDataToFile();
                             }
-                            postalCodeIndex++;
-                            saveProperties();
                         }
-                        updateMultipleSearchGUI(true);
-                        saveDataToFile();
+                        postalCodeIndex++;
+                        saveProperties();
                     }
+                    updateMultipleSearchGUI(true);
+                    saveDataToFile();
+                }
+                continueWork = false;
                 running = false;
                 saveProperties();
             }
@@ -280,11 +290,11 @@ public class YPScraperLogic {
                 public void run() {
                     if (postalCodeIndex <= postalCodes.length) {
                         int postalCodeItem = postalCodeIndex + 1;
-                        parent.getTextFieldStatus().setText(postalCodeItem + "/" + postalCodes.length+ " locations processed. " + storage.List.size() + " items scraped.");
+                        parent.getTextFieldStatus().setText(postalCodeItem + "/" + postalCodes.length + " locations processed. " + scrapedItemsCount + " items scraped.");
                     }
                     if (isFinished) {
                         postalCodeIndex--;
-                        parent.getTextFieldStatus().setText("Finished. " + postalCodeIndex + "/" + postalCodes.length + " locations processed. " + storage.List.size() + " items scraped.");
+                        parent.getTextFieldStatus().setText("Finished. " + postalCodeIndex + "/" + postalCodes.length + " locations processed. " + scrapedItemsCount + " items scraped.");
                     }
                 }
             });
@@ -312,9 +322,16 @@ public class YPScraperLogic {
     
     public void removeOldFileIfExists() {
         if (parent.outputFolder != null) {
-            File f = parent.outputFolder;
-            if (f.exists() && !f.isDirectory()) {
-                f.delete();
+            Path path = null;
+            if (!parent.getTextFieldLocation().getText().equalsIgnoreCase("")) {
+                path = Paths.get(parent.outputFolder.getAbsolutePath() + separator + business.replace(" ", "") + "_" + province + ".csv");
+            } else {
+                path = Paths.get(parent.outputFolder.getAbsolutePath() + separator + business.replace(" ", "") + ".csv");
+            }
+            try {
+                Files.deleteIfExists(path);
+            } catch (IOException ex) {
+                Logger.getLogger(YPScraperLogic.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
     }
@@ -332,6 +349,7 @@ public class YPScraperLogic {
             String address = el.select("div.listing__address").text();
             storage.List.add(new ScrapedItem(title, address.replace("Get directions", ""), processLink(link), province));
         }
+        scrapedItemsCount += els.size();
         System.out.println(storage.List.size());
     }
 
@@ -416,61 +434,68 @@ public class YPScraperLogic {
         }
         currentURL = url;
     }
+    
+    public void createOutputFile() {
+        StringBuilder sb = new StringBuilder();
+        Path path = null;
+        
+        if (!business.equalsIgnoreCase(parent.getTextFieldBusiness().getText())) {
+            business = parent.getTextFieldBusiness().getText();
+        }
+        if (!province.equalsIgnoreCase(parent.getTextFieldLocation().getText())) {
+            province = parent.getTextFieldLocation().getText();
+        }
+ 
+        if (!parent.getTextFieldLocation().getText().equalsIgnoreCase("")) {
+            path = Paths.get(parent.outputFolder.getAbsolutePath() + separator + business.replace(" ", "") + "_" + province + ".csv");
+        } else {
+            path = Paths.get(parent.outputFolder.getAbsolutePath() + separator + business.replace(" ", "") + ".csv");
+        }
+
+        sb.append("Link");
+        sb.append(',');
+        sb.append("\"Name\"");
+        sb.append(',');
+        sb.append("\"Address\"");
+        sb.append(',');
+        sb.append("\"Location\"");
+        sb.append('\n');
+        try {
+            Files.createDirectories(path.getParent());
+            Files.write(path, sb.toString().getBytes(), StandardOpenOption.WRITE, StandardOpenOption.CREATE);
+        } catch (IOException ex) {
+            Logger.getLogger(YPScraperLogic.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
 
     public void saveDataToFile() {
         StringBuilder sb = new StringBuilder();
-       
         try {
             Path path = null;
             if (!parent.getTextFieldLocation().getText().equalsIgnoreCase("")) {
                 path = Paths.get(parent.outputFolder.getAbsolutePath() + separator + business.replace(" ", "") + "_" + province + ".csv");
-            }
-            else{
+            } else {
                 path = Paths.get(parent.outputFolder.getAbsolutePath() + separator + business.replace(" ", "") + ".csv");
             }
-            
-            File f = new File(path.toString());
-            if (f.exists() && !f.isDirectory()) {
-                for (int i = 0; i < storage.List.size(); i++) {
-                    sb.append(storage.List.get(i).Link);
-                    sb.append(',');
-                    sb.append("\"" + storage.List.get(i).Name + "\"");
-                    sb.append(',');
-                    sb.append("\"" + storage.List.get(i).Address + "\"");
-                    sb.append(',');
-                    sb.append("\"" + storage.List.get(i).Location + "\"");
-                    sb.append('\n');
-                }
-                Files.createDirectories(path.getParent());
-                Files.write(path, sb.toString().getBytes(), StandardOpenOption.WRITE, StandardOpenOption.APPEND);
+            if (!Files.exists(path, LinkOption.NOFOLLOW_LINKS)) {
+                createOutputFile();
             }
-            else
-            {
-                sb.append("Link");
+            for (int i = 0; i < storage.List.size(); i++) {
+                sb.append(storage.List.get(i).Link);
                 sb.append(',');
-                sb.append("\"Name\"");
+                sb.append("\"" + storage.List.get(i).Name + "\"");
                 sb.append(',');
-                sb.append("\"Address\"");
+                sb.append("\"" + storage.List.get(i).Address + "\"");
                 sb.append(',');
-                sb.append("\"Location\"");
+                sb.append("\"" + storage.List.get(i).Location + "\"");
                 sb.append('\n');
-                for (int i = 0; i < storage.List.size(); i++) {
-                    sb.append(storage.List.get(i).Link);
-                    sb.append(',');
-                    sb.append("\"" + storage.List.get(i).Name + "\"");
-                    sb.append(',');
-                    sb.append("\"" + storage.List.get(i).Address + "\"");
-                    sb.append(',');
-                    sb.append("\"" + storage.List.get(i).Location + "\"");
-                    sb.append('\n');
-                }
-                Files.createDirectories(path.getParent());
-                Files.write(path, sb.toString().getBytes(), StandardOpenOption.WRITE, StandardOpenOption.CREATE);
             }
+            Files.createDirectories(path.getParent());
+            Files.write(path, sb.toString().getBytes(), StandardOpenOption.WRITE, StandardOpenOption.APPEND);
         } catch (IOException ex) {
             System.out.println(ex.getMessage());
             Logger.getLogger(YPScraperLogic.class.getName()).log(Level.SEVERE, null, ex);
-            JOptionPane.showMessageDialog(null, "Something wrong with output file: \n"+getPrintStacktrace(ex), "Data wasn't saved ", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(null, "Something wrong with output file: \n" + getPrintStacktrace(ex), "Data wasn't saved ", JOptionPane.ERROR_MESSAGE);
         }
         storage.List.clear();
     }
@@ -483,14 +508,13 @@ public class YPScraperLogic {
         return writer.toString();
     }
     
-    public void getPostalCodes(String path){
+    public void getPostalCodes(String path) {
         String csvFile = path;
         BufferedReader br = null;
         String line = "";
         String cvsSplitBy = ",";
         ArrayList<String> result = new ArrayList<String>();
         try {
-
             br = new BufferedReader(new FileReader(csvFile));
             boolean header = true;
             while ((line = br.readLine()) != null) {
@@ -501,7 +525,7 @@ public class YPScraperLogic {
                 String[] country = line.split(cvsSplitBy);
                 result.add(country[0]);
             }
-        postalCodes = result.toArray(new String[0]);
+            postalCodes = result.toArray(new String[0]);
         } catch (FileNotFoundException e) {
             e.printStackTrace();
             System.out.println(e.getMessage());
