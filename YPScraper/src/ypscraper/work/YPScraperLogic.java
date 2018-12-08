@@ -147,30 +147,42 @@ public class YPScraperLogic {
             createNewFile();
             input = new FileInputStream(propertiesFile.getAbsoluteFile());
             parent.properties.load(input);
+            
+            if (parent.properties.get("business") != null) {
+                business = parent.properties.get("business").toString();
+                parent.getTextFieldBusiness().setText(business);
+            }
 
-            business = parent.properties.get("business").toString();
-            parent.getTextFieldBusiness().setText(business);
+            if (parent.properties.get("province") != null) {
+                 province = parent.properties.get("province").toString();
+                parent.getTextFieldLocation().setText(province);
+            }
 
-            province = parent.properties.get("province").toString();
-            parent.getTextFieldLocation().setText(province);
-
-            String path = parent.properties.get("outputFolder").toString();
-            if (!path.equalsIgnoreCase("")) {
-                parent.outputFolder = new File(path);
-                parent.getlblOutputPathData().setText(parent.outputFolder.getName());
+            if (parent.properties.get("outputFolder") != null) {
+                String path = parent.properties.get("outputFolder").toString();
+                if (!path.equalsIgnoreCase("")) {
+                    parent.outputFolder = new File(path);
+                    parent.getlblOutputPathData().setText(parent.outputFolder.getName());
+                }
             }
             
-            String csvPath = parent.properties.get("csvPostalCodesFile").toString();
-            if (!csvPath.equalsIgnoreCase("")) {
-                parent.inputLocationsFile = new File(csvPath);
-                parent.getlblPostalCodesPathData().setText(parent.inputLocationsFile.getName());
+            if (parent.properties.get("csvPostalCodesFile") != null) {
+                String csvPath = parent.properties.get("csvPostalCodesFile").toString();
+                if (!csvPath.equalsIgnoreCase("")) {
+                    parent.inputLocationsFile = new File(csvPath);
+                    parent.getlblPostalCodesPathData().setText(parent.inputLocationsFile.getName());
+                }
             }
             
-            String postalCodeIndexStr = parent.properties.get("postalCodeIndex").toString();
-            postalCodeIndex = Integer.parseInt(postalCodeIndexStr);
+            if (parent.properties.get("postalCodeIndex") != null) {
+                String postalCodeIndexStr = parent.properties.get("postalCodeIndex").toString();
+                postalCodeIndex = Integer.parseInt(postalCodeIndexStr);
+            }
+            if (parent.properties.get("running") != null) {
+                String runningStr = parent.properties.get("running").toString();
+                running = Boolean.parseBoolean(runningStr);
+            }
             
-            String runningStr = parent.properties.get("running").toString();
-            running = Boolean.parseBoolean(runningStr);
             if (running) {
                 continueRun();
             }
