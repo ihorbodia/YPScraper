@@ -324,9 +324,9 @@ public class YPScraperLogic {
         if (parent.outputFolder != null) {
             Path path = null;
             if (!parent.getTextFieldLocation().getText().equalsIgnoreCase("")) {
-                path = Paths.get(parent.outputFolder.getAbsolutePath() + separator + business.replace(" ", "") + "_" + province + ".csv");
+                path = Paths.get(parent.outputFolder.getAbsolutePath() + separator + business + "_" + province + ".csv");
             } else {
-                path = Paths.get(parent.outputFolder.getAbsolutePath() + separator + business.replace(" ", "") + ".csv");
+                path = Paths.get(parent.outputFolder.getAbsolutePath() + separator + business + ".csv");
             }
             try {
                 Files.deleteIfExists(path);
@@ -447,9 +447,9 @@ public class YPScraperLogic {
         }
  
         if (!parent.getTextFieldLocation().getText().equalsIgnoreCase("")) {
-            path = Paths.get(parent.outputFolder.getAbsolutePath() + separator + business.replace(" ", "") + "_" + province + ".csv");
+            path = Paths.get(parent.outputFolder.getAbsolutePath() + separator + business + "_" + province + ".csv");
         } else {
-            path = Paths.get(parent.outputFolder.getAbsolutePath() + separator + business.replace(" ", "") + ".csv");
+            path = Paths.get(parent.outputFolder.getAbsolutePath() + separator + business + ".csv");
         }
 
         sb.append("Link");
@@ -473,9 +473,9 @@ public class YPScraperLogic {
         try {
             Path path = null;
             if (!parent.getTextFieldLocation().getText().equalsIgnoreCase("")) {
-                path = Paths.get(parent.outputFolder.getAbsolutePath() + separator + business.replace(" ", "") + "_" + province + ".csv");
+                path = Paths.get(parent.outputFolder.getAbsolutePath() + separator + business + "_" + province + ".csv");
             } else {
-                path = Paths.get(parent.outputFolder.getAbsolutePath() + separator + business.replace(" ", "") + ".csv");
+                path = Paths.get(parent.outputFolder.getAbsolutePath() + separator + business + ".csv");
             }
             if (!Files.exists(path, LinkOption.NOFOLLOW_LINKS)) {
                 createOutputFile();
