@@ -223,6 +223,7 @@ public class YPScraperLogic {
         executorService = Executors.newSingleThreadExecutor();
         future = executorService.submit(new Runnable() {
             public void run() {
+                scrapedItemsCount = 0;
                 continueWork = true;
                 running = true;
                 if (!province.equalsIgnoreCase("")) {
