@@ -220,17 +220,13 @@ public class YPScraper extends JFrame {
     private void initLogic() {
         try {
             logic = new YPScraperLogic(YPScraper.this);
-        } catch (IOException ex) {
-            logger.log(Level.SEVERE, null, ex);
-        } catch (InterruptedException ex) {
-            logger.log(Level.SEVERE, null, ex);
-        } catch (ExecutionException ex) {
+        } catch (Exception ex) {
             logger.log(Level.SEVERE, null, ex);
         }
     }
 
     public YPScraper() {
-        setTitle("YP Crawler CA v1.7");
+        setTitle("YP Crawler CA v1.8");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setBounds(100, 100, 450, 300);
         add(PanelMain());

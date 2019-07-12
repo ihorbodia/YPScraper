@@ -387,11 +387,8 @@ public class YPScraperLogic {
                     .userAgent("Mozilla/5.0")
                     .timeout(0)
                     .get();
-        } catch (Error  ex) {
+        } catch (Exception ex) {
             System.out.println(ex.getMessage());
-            parent.logger.log(Level.SEVERE, null, ex);
-            parent.logger.log(Level.INFO, String.valueOf(storage.List.size() +" Location: "+ province +" Link: "+ currentURL));
-        } catch (IOException ex) {
             parent.logger.log(Level.SEVERE, null, ex);
             parent.logger.log(Level.INFO, String.valueOf(storage.List.size() +" Location: "+ province +" Link: "+ currentURL));
         }
