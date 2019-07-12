@@ -1,9 +1,4 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
-package ypscraper.gui;
+package GUI;
 
 
 import javax.swing.JFrame;
@@ -11,10 +6,6 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.text.DefaultCaret;
 
-/**
- *
- * @author Ihor
- */
 class LogWindow extends JFrame {
   private JTextArea textArea = new JTextArea();
 

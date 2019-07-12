@@ -1,9 +1,4 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
-package ypscraper.work;
+package Logic;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -17,8 +12,6 @@ import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
-import java.net.SocketTimeoutException;
-import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
@@ -37,7 +30,6 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import ypscraper.YPScraper;
 
 /**
  *
@@ -123,7 +115,7 @@ public class YPScraperLogic {
             if (parent.inputLocationsFile != null) {
                 parent.properties.setProperty("csvPostalCodesFile", parent.inputLocationsFile.getAbsolutePath());
             }
-            
+
             parent.properties.setProperty("running", String.valueOf(running));
             parent.properties.setProperty("postalCodeIndex", Integer.toString(postalCodeIndex));
             parent.properties.store(output, null);
@@ -149,14 +141,14 @@ public class YPScraperLogic {
             createNewFile();
             input = new FileInputStream(propertiesFile.getAbsoluteFile());
             parent.properties.load(input);
-            
+
             if (parent.properties.get("business") != null) {
                 business = parent.properties.get("business").toString();
                 parent.getTextFieldBusiness().setText(business);
             }
 
             if (parent.properties.get("province") != null) {
-                 province = parent.properties.get("province").toString();
+                province = parent.properties.get("province").toString();
                 parent.getTextFieldLocation().setText(province);
             }
 
@@ -167,7 +159,7 @@ public class YPScraperLogic {
                     parent.getlblOutputPathData().setText(parent.outputFolder.getName());
                 }
             }
-            
+
             if (parent.properties.get("csvPostalCodesFile") != null) {
                 String csvPath = parent.properties.get("csvPostalCodesFile").toString();
                 if (!csvPath.equalsIgnoreCase("")) {
@@ -175,7 +167,7 @@ public class YPScraperLogic {
                     parent.getlblPostalCodesPathData().setText(parent.inputLocationsFile.getName());
                 }
             }
-            
+
             if (parent.properties.get("postalCodeIndex") != null) {
                 String postalCodeIndexStr = parent.properties.get("postalCodeIndex").toString();
                 postalCodeIndex = Integer.parseInt(postalCodeIndexStr);
@@ -184,7 +176,7 @@ public class YPScraperLogic {
                 String runningStr = parent.properties.get("running").toString();
                 running = Boolean.parseBoolean(runningStr);
             }
-            
+
             if (running) {
                 continueRun();
             }
@@ -204,7 +196,7 @@ public class YPScraperLogic {
             }
         }
     }
-    
+
     public void continueRun() {
         Run(false);
     }
@@ -299,7 +291,7 @@ public class YPScraperLogic {
         };
         thread.start();
     }
-    
+
     public void updateMultipleSearchGUI(boolean isFinished) {
         if (!SwingUtilities.isEventDispatchThread()) {
             SwingUtilities.invokeLater(new Runnable() {
@@ -318,7 +310,7 @@ public class YPScraperLogic {
             return;
         }
     }
-    
+
     public void updateOneLocationSearchGUI(boolean isFinished) {
         if (!SwingUtilities.isEventDispatchThread()) {
             SwingUtilities.invokeLater(new Runnable() {
@@ -336,7 +328,7 @@ public class YPScraperLogic {
             return;
         }
     }
-    
+
     public void removeOldFileIfExists() {
         if (parent.outputFolder != null) {
             Path path = null;
@@ -391,10 +383,10 @@ public class YPScraperLogic {
         Document doc = null;
         try {
             doc = Jsoup
-            .connect(currentURL)
-            .userAgent("Mozilla/5.0")
-            .timeout(0)
-            .get();
+                    .connect(currentURL)
+                    .userAgent("Mozilla/5.0")
+                    .timeout(0)
+                    .get();
         } catch (Error  ex) {
             System.out.println(ex.getMessage());
             parent.logger.log(Level.SEVERE, null, ex);
@@ -423,7 +415,7 @@ public class YPScraperLogic {
         float floatPages = (float) (fcount / 40.0);
         int intPages = icount / 40;
         parseCurrentPage(doc);
-        
+
         if (intPages > 50) {
             return 50;
         }
@@ -460,18 +452,18 @@ public class YPScraperLogic {
         }
         currentURL = url;
     }
-    
+
     public void createOutputFile() {
         StringBuilder sb = new StringBuilder();
         Path path = null;
-        
+
         if (!business.equalsIgnoreCase(parent.getTextFieldBusiness().getText())) {
             business = parent.getTextFieldBusiness().getText();
         }
         if (!province.equalsIgnoreCase(parent.getTextFieldLocation().getText())) {
             province = parent.getTextFieldLocation().getText();
         }
- 
+
         if (!parent.getTextFieldLocation().getText().equalsIgnoreCase("")) {
             path = Paths.get(parent.outputFolder.getAbsolutePath() + separator + business + "_" + province + ".csv");
         } else {
@@ -525,7 +517,7 @@ public class YPScraperLogic {
         }
         storage.List.clear();
     }
-    
+
     private String getPrintStacktrace(Exception ex) {
         StringWriter writer = new StringWriter();
         PrintWriter printWriter = new PrintWriter(writer);
@@ -533,7 +525,7 @@ public class YPScraperLogic {
         printWriter.flush();
         return writer.toString();
     }
-    
+
     public void getPostalCodes(String path) {
         String csvFile = path;
         BufferedReader br = null;

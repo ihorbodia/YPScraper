@@ -1,4 +1,6 @@
-package ypscraper;
+package Logic;
+
+import GUI.WindowHandler;
 
 import java.awt.BorderLayout;
 import java.awt.Component;
@@ -25,8 +27,6 @@ import javax.swing.JProgressBar;
 import javax.swing.JSpinner;
 import javax.swing.JTextField;
 import javax.swing.border.EmptyBorder;
-import ypscraper.gui.WindowHandler;
-import ypscraper.work.YPScraperLogic;
 
 
 public class YPScraper extends JFrame {
@@ -51,22 +51,22 @@ public class YPScraper extends JFrame {
     private JButton btnCancel;
     private JFileChooser jfileChooser;
     private JFileChooser jfolderChooser;
-    
+
     public File outputFolder;
     public File inputLocationsFile;
-    
+
     private WindowHandler handler = null;
 
     public Logger logger = null;
-    
+
     YPScraperLogic logic;
     public Properties properties = new Properties();
 
     public class StartAction implements ActionListener {
-        
+
         public StartAction() {
         }
-        
+
         @Override
         public void actionPerformed(ActionEvent e) {
             System.out.println("Start");
@@ -78,7 +78,7 @@ public class YPScraper extends JFrame {
             logic.saveProperties();
         }
     }
-    
+
     public class SetOutputPathAction implements ActionListener {
 
         public SetOutputPathAction() {
@@ -96,7 +96,7 @@ public class YPScraper extends JFrame {
             }
         }
     }
-    
+
     public class SetCSVPostaCodesAction implements ActionListener {
 
         public SetCSVPostaCodesAction() {
@@ -115,7 +115,7 @@ public class YPScraper extends JFrame {
             }
         }
     }
-   
+
     private String selectFolderDialog() {
         String osName = System.getProperty("os.name");
         String result = "";
@@ -206,17 +206,17 @@ public class YPScraper extends JFrame {
             }
         }));
     }
-    
+
     private void initLogger(){
         handler = WindowHandler.getInstance();
         logger = Logger.getLogger("logging.handler");
         logger.addHandler(handler);
     }
-    
+
     public void logMessage(String message) {
         logger.info(message);
     }
-    
+
     private void initLogic() {
         try {
             logic = new YPScraperLogic(YPScraper.this);
@@ -241,7 +241,7 @@ public class YPScraper extends JFrame {
     }
 
     public JPanel PanelMain() {
-        
+
         JPanel panel = new JPanel(new BorderLayout());
         panel.setBorder(new EmptyBorder(5, 5, 5, 5));
         GridBagLayout gridBagLayout = new GridBagLayout();
@@ -291,14 +291,14 @@ public class YPScraper extends JFrame {
         gbc_lblOutputPathData.gridx = 1;
         gbc_lblOutputPathData.gridy = 3;
         panel.add(getlblOutputPathData(), gbc_lblOutputPathData);
-        
+
         GridBagConstraints gbc_lblPostalCodes = new GridBagConstraints();
         gbc_lblPostalCodes.insets = new Insets(0, 0, 5, 5);
         gbc_lblPostalCodes.anchor = GridBagConstraints.EAST;
         gbc_lblPostalCodes.gridx = 0;
         gbc_lblPostalCodes.gridy = 4;
         panel.add(getlblPostalCodesPath(), gbc_lblPostalCodes);
-        
+
         GridBagConstraints gbc_lblPostaCodesData = new GridBagConstraints();
         gbc_lblPostaCodesData.insets = new Insets(0, 0, 5, 5);
         gbc_lblPostaCodesData.fill = GridBagConstraints.HORIZONTAL;
@@ -307,7 +307,7 @@ public class YPScraper extends JFrame {
         gbc_lblPostaCodesData.gridx = 1;
         gbc_lblPostaCodesData.gridy = 4;
         panel.add(getlblPostalCodesPathData(), gbc_lblPostaCodesData);
-        
+
         GridBagConstraints gbc_lblStatus = new GridBagConstraints();
         gbc_lblStatus.insets = new Insets(0, 0, 5, 5);
         gbc_lblStatus.anchor = GridBagConstraints.EAST;
@@ -335,7 +335,7 @@ public class YPScraper extends JFrame {
         gbc_btnStop.gridx = 7;
         gbc_btnStop.gridy = 8;
         panel.add(getBtnStop(), gbc_btnStop);
-        
+
         GridBagConstraints gbc_btnSetOutputFolder = new GridBagConstraints();
         gbc_btnSetOutputFolder.insets = new Insets(25, 0, 5, 5);
         gbc_btnSetOutputFolder.gridx = 1;
@@ -347,11 +347,11 @@ public class YPScraper extends JFrame {
         gbc_btnSetCSVPostaCodesFolder.gridx = 2;
         gbc_btnSetCSVPostaCodesFolder.gridy = 8;
         panel.add(getBtnChooseCSVPostaCodesPath(), gbc_btnSetCSVPostaCodesFolder);
-        
+
         panel.setVisible(true);
         return panel;
     }
-    
+
     public JLabel getlblPostalCodesPathData() {
         if (lblPostalCodesPathData == null) {
             lblPostalCodesPathData = new JLabel("");
@@ -365,7 +365,7 @@ public class YPScraper extends JFrame {
         }
         return lblPostalCodesPath;
     }
-    
+
     public JLabel getlblOutputPathData() {
         if (lblOutputPathData == null) {
             lblOutputPathData = new JLabel("");
@@ -470,7 +470,7 @@ public class YPScraper extends JFrame {
         }
         return btnSetOutputPath;
     }
-    
+
     public JButton getBtnChooseCSVPostaCodesPath() {
         if (btnChooseCSVPostaCodesPath == null) {
             btnChooseCSVPostaCodesPath = new JButton("Choose postal codes");
@@ -485,7 +485,7 @@ public class YPScraper extends JFrame {
         }
         return btnCancel;
     }
-    
+
     private JFileChooser getJFolderChooser() {
         if (jfolderChooser == null) {
             jfolderChooser = new JFileChooser();
@@ -494,7 +494,7 @@ public class YPScraper extends JFrame {
         }
         return jfolderChooser;
     }
-    
+
     private JFileChooser getJFilesChooser() {
         if (jfileChooser == null) {
             jfileChooser = new JFileChooser();

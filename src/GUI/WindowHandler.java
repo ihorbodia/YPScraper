@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package ypscraper.gui;
+package GUI;
 
 import java.util.Formatter;
 import java.util.logging.Handler;
