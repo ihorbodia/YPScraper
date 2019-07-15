@@ -1,7 +1,6 @@
-package Logic;
+package GUI;
 
-import GUI.WindowHandler;
-
+import Actions.*;
 import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Dimension;
@@ -52,178 +51,6 @@ public class YPScraper extends JFrame {
     private JFileChooser jfileChooser;
     private JFileChooser jfolderChooser;
 
-    public File outputFolder;
-    public File inputLocationsFile;
-
-    private WindowHandler handler = null;
-
-    public Logger logger = null;
-
-    YPScraperLogic logic;
-    public Properties properties = new Properties();
-
-    public class StartAction implements ActionListener {
-
-        public StartAction() {
-        }
-
-        @Override
-        public void actionPerformed(ActionEvent e) {
-            System.out.println("Start");
-            logMessage("Starting...");
-            getTextFieldStatus().setText("Starting...");
-            logic.removeOldFileIfExists();
-            logic.createOutputFile();
-            logic.Run(true);
-            logic.saveProperties();
-        }
-    }
-
-    public class SetOutputPathAction implements ActionListener {
-
-        public SetOutputPathAction() {
-        }
-
-        @Override
-        public void actionPerformed(ActionEvent e) {
-            System.out.println("SetOutputAction");
-
-            String path = selectFolderDialog();
-            if (!path.equalsIgnoreCase("")) {
-                outputFolder = new File(path);
-                getlblOutputPathData().setText(outputFolder.getName());
-                logic.saveProperties();
-            }
-        }
-    }
-
-    public class SetCSVPostaCodesAction implements ActionListener {
-
-        public SetCSVPostaCodesAction() {
-        }
-
-        @Override
-        public void actionPerformed(ActionEvent e) {
-            System.out.println("Set postal codes action raised");
-            FileDialog dialog = new FileDialog(YPScraper.this, "Select File to Open");
-            dialog.setVisible(true);
-            if (dialog.getFile() != null && !dialog.getFile().equalsIgnoreCase("") && dialog.getFile().toLowerCase().endsWith(".csv")) {
-                inputLocationsFile = new File(dialog.getDirectory() + dialog.getFile());
-                getlblPostalCodesPathData().setText(inputLocationsFile.getName());
-                logic.getPostalCodes(inputLocationsFile.getAbsolutePath());
-                logic.saveProperties();
-            }
-        }
-    }
-
-    private String selectFolderDialog() {
-        String osName = System.getProperty("os.name");
-        String result = "";
-        if (osName.equalsIgnoreCase("mac os x")) {
-            FileDialog chooser = new FileDialog(YPScraper.this, "Select folder");
-            System.setProperty("apple.awt.fileDialogForDirectories", "true");
-            chooser.setVisible(true);
-
-            System.setProperty("apple.awt.fileDialogForDirectories", "false");
-            if (chooser.getDirectory() != null) {
-                String folderName = chooser.getDirectory();
-                folderName += chooser.getFile();
-                result = folderName;
-            }
-        } else {
-            JFileChooser chooser = new JFileChooser();
-            chooser.setDialogTitle("Select Target Folder");
-            chooser.setFileSelectionMode(chooser.DIRECTORIES_ONLY);
-
-            int returnVal = chooser.showDialog(YPScraper.this, "Select folder");
-            if (returnVal == JFileChooser.APPROVE_OPTION) {
-                File userSelectedFolder = chooser.getSelectedFile();
-                String folderName = userSelectedFolder.getAbsolutePath();
-                result = folderName;
-            }
-        }
-        return result;
-    }
-
-    public class StopAction implements ActionListener {
-
-        public StopAction() {
-
-        }
-
-        @Override
-        public void actionPerformed(ActionEvent e) {
-            System.out.println("Stop");
-            if (logic != null) {
-                if (logic.future != null) {
-                    logic.future.cancel(true);
-                }
-                logic.running = false;
-                logic.continueWork = false;
-                logic.saveDataToFile();
-            }
-            logic.saveProperties();
-        }
-    }
-
-    public class CancelAction implements ActionListener {
-
-        public CancelAction() {
-        }
-
-        @Override
-        public void actionPerformed(ActionEvent e) {
-            if (logic != null) {
-                logic.future.cancel(true);
-                getBtnStop().setEnabled(false);
-            }
-        }
-    }
-
-    public static void main(String[] args) throws IOException {
-        YPScraper frame = new YPScraper();
-        frame.pack();
-        frame.setSize(new Dimension(600, 210));
-        frame.setResizable(false);
-        frame.setVisible(true);
-        WindowHandler h = WindowHandler.getInstance();
-        LogRecord r = new LogRecord(Level.WARNING, "Start logger...");
-        h.publish(r);
-    }
-
-    private void initActions() {
-        getBtnStart().addActionListener(new StartAction());
-        getBtnStop().addActionListener(new StopAction());
-        getBtnCancel().addActionListener(new CancelAction());
-        getBtnOutputPath().addActionListener(new SetOutputPathAction());
-        getBtnChooseCSVPostaCodesPath().addActionListener(new SetCSVPostaCodesAction());
-        Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
-            public void run() {
-                logic.saveProperties();
-                if (logic.future != null && !logic.future.isDone()) {
-                    logic.saveDataToFile();
-                }
-            }
-        }));
-    }
-
-    private void initLogger(){
-        handler = WindowHandler.getInstance();
-        logger = Logger.getLogger("logging.handler");
-        logger.addHandler(handler);
-    }
-
-    public void logMessage(String message) {
-        logger.info(message);
-    }
-
-    private void initLogic() {
-        try {
-            logic = new YPScraperLogic(YPScraper.this);
-        } catch (Exception ex) {
-            logger.log(Level.SEVERE, null, ex);
-        }
-    }
 
     public YPScraper() {
         setTitle("YP Crawler CA v1.8");
@@ -231,12 +58,20 @@ public class YPScraper extends JFrame {
         setBounds(100, 100, 450, 300);
         add(PanelMain());
         setContentPane(PanelMain());
-        initLogic();
+
         initActions();
-        initLogger();
     }
 
-    public JPanel PanelMain() {
+    private void initActions() {
+        getBtnStart().addActionListener(new StartAction());
+        getBtnStop().addActionListener(new StopAction());
+        getBtnCancel().addActionListener(new CancelAction());
+        getBtnOutputPath().addActionListener(new SetOutputPathAction());
+        getBtnChooseCSVPostaCodesPath().addActionListener(new SetCsvPostalCodesAction());
+
+    }
+
+    private JPanel PanelMain() {
 
         JPanel panel = new JPanel(new BorderLayout());
         panel.setBorder(new EmptyBorder(5, 5, 5, 5));

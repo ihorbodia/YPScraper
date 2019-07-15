@@ -1,31 +1,20 @@
 package Logic;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.io.UnsupportedEncodingException;
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.logging.Level;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
-import org.apache.commons.io.FilenameUtils;
+import Services.DIResolver;
+import Services.FilesService;
+import Services.LoggerService;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -36,174 +25,37 @@ import org.jsoup.select.Elements;
  * @author Ihor
  */
 public class YPScraperLogic {
-
     //private static String[] provinces = {"AB", "BC", "MB", "NB", "NL", "NT", "NS", "NU", "ON", "PE", "QC", "SK", "YT"};
     private String[] postalCodes = null;
     private String business;
     private String currentURL;
-    public boolean continueWork = false;
-    private String CABaseURLPart = "https://www.yellowpages.ca/search/si";
+    boolean continueWork = false;
     private String province;
-    String separator = File.separator;
-    ExecutorService executorService;
-    File propertiesFile;
-    ScrapedItemsStorage storage;
-    boolean isMultipleSearch;
-    public boolean running;
-    int postalCodeIndex;
-    int scrapedItemsCount;
+    private String separator = File.separator;
 
-    String firstPage;
-    InputStream input = null;
-    OutputStream output = null;
-    private YPScraper parent;
-    public Future<?> future;
+    private ScrapedItemsStorage storage;
+    private boolean isMultipleSearch;
+    boolean running;
+    private int postalCodeIndex;
+    private int scrapedItemsCount;
 
-    public YPScraperLogic(YPScraper parent) throws IOException, InterruptedException, ExecutionException {
-        this.parent = parent;
-        restoreProperties();
-    }
+    private InputStream input = null;
 
-    private void createNewFile() {
-        try {
-            File propertiesFileTemp = File.createTempFile("config", ".properties");
-            String propPath = FilenameUtils.getFullPathNoEndSeparator(propertiesFileTemp.getAbsolutePath()) + separator + "config.properties";
-            File f = new File(propPath);
-            if (f.exists() && !f.isDirectory()) {
-                propertiesFile = f;
-            } else {
-                propertiesFile = f;
-                f.createNewFile();
-                output = new FileOutputStream(propertiesFile.getAbsoluteFile());
-                parent.properties.setProperty("business", "");
-                parent.properties.setProperty("province", "");
-                parent.properties.setProperty("connTimeout", "0");
-                parent.properties.setProperty("outputFolder", "");
-                parent.properties.setProperty("csvPostalCodesFile", "");
-                parent.properties.setProperty("running", "");
-                parent.properties.setProperty("postalCodeIndex", "0");
-                parent.properties.store(output, null);
-            }
-            propertiesFileTemp.delete();
-        } catch (IOException io) {
-            io.printStackTrace();
-            System.out.println(io.getMessage());
-            parent.logger.log(Level.SEVERE, null, io);
-        } finally {
-            if (output != null) {
-                try {
-                    output.close();
-                } catch (IOException e) {
-                    System.out.println(e.getMessage());
-                    e.printStackTrace();
-                    parent.logger.log(Level.SEVERE, null, e);
-                }
-            }
-        }
-    }
+    private Future<?> future;
+    private DIResolver diResolver;
 
-    public void saveProperties() {
-        try {
-            output = new FileOutputStream(propertiesFile.getAbsoluteFile());
-            parent.properties.setProperty("business", parent.getTextFieldBusiness().getText());
-            if (!isMultipleSearch) {
-                parent.properties.setProperty("province", parent.getTextFieldLocation().getText());
-            }
-            if (parent.outputFolder != null) {
-                parent.properties.setProperty("outputFolder", parent.outputFolder.getAbsolutePath());
-            }
-            if (parent.inputLocationsFile != null) {
-                parent.properties.setProperty("csvPostalCodesFile", parent.inputLocationsFile.getAbsolutePath());
-            }
-
-            parent.properties.setProperty("running", String.valueOf(running));
-            parent.properties.setProperty("postalCodeIndex", Integer.toString(postalCodeIndex));
-            parent.properties.store(output, null);
-        } catch (IOException io) {
-            io.printStackTrace();
-            System.out.println(io.getMessage());
-            parent.logger.log(Level.SEVERE, null, io);
-        } finally {
-            if (output != null) {
-                try {
-                    output.close();
-                } catch (IOException e) {
-                    System.out.println(e.getMessage());
-                    e.printStackTrace();
-                    parent.logger.log(Level.SEVERE, null, e);
-                }
-            }
-        }
-    }
-
-    private void restoreProperties() {
-        try {
-            createNewFile();
-            input = new FileInputStream(propertiesFile.getAbsoluteFile());
-            parent.properties.load(input);
-
-            if (parent.properties.get("business") != null) {
-                business = parent.properties.get("business").toString();
-                parent.getTextFieldBusiness().setText(business);
-            }
-
-            if (parent.properties.get("province") != null) {
-                province = parent.properties.get("province").toString();
-                parent.getTextFieldLocation().setText(province);
-            }
-
-            if (parent.properties.get("outputFolder") != null) {
-                String path = parent.properties.get("outputFolder").toString();
-                if (!path.equalsIgnoreCase("")) {
-                    parent.outputFolder = new File(path);
-                    parent.getlblOutputPathData().setText(parent.outputFolder.getName());
-                }
-            }
-
-            if (parent.properties.get("csvPostalCodesFile") != null) {
-                String csvPath = parent.properties.get("csvPostalCodesFile").toString();
-                if (!csvPath.equalsIgnoreCase("")) {
-                    parent.inputLocationsFile = new File(csvPath);
-                    parent.getlblPostalCodesPathData().setText(parent.inputLocationsFile.getName());
-                }
-            }
-
-            if (parent.properties.get("postalCodeIndex") != null) {
-                String postalCodeIndexStr = parent.properties.get("postalCodeIndex").toString();
-                postalCodeIndex = Integer.parseInt(postalCodeIndexStr);
-            }
-            if (parent.properties.get("running") != null) {
-                String runningStr = parent.properties.get("running").toString();
-                running = Boolean.parseBoolean(runningStr);
-            }
-
-            if (running) {
-                continueRun();
-            }
-        } catch (IOException ex) {
-            System.out.println(ex.getMessage());
-            ex.printStackTrace();
-            parent.logger.log(Level.SEVERE, null, ex);
-        } finally {
-            if (input != null) {
-                try {
-                    input.close();
-                } catch (IOException e) {
-                    System.out.println(e.getMessage());
-                    e.printStackTrace();
-                    parent.logger.log(Level.SEVERE, null, e);
-                }
-            }
-        }
-    }
-
-    public void continueRun() {
-        Run(false);
+    public YPScraperLogic() {
+        this.diResolver = new DIResolver();
     }
 
     public void Run(boolean isStartRun) {
-        business = parent.getTextFieldBusiness().getText();
-        province = parent.getTextFieldLocation().getText();
+        diResolver.getPropertiesService().restoreProperties();
+
+        business = diResolver.getGuiService().getTextFieldBusiness();
+        province = diResolver.getGuiService().getTextFieldLocation();
+
+        FilesService filesService = diResolver.getFilesService();
+        filesService.
 
         if (parent.outputFolder == null) {
             File f = new File(".");
@@ -212,7 +64,7 @@ public class YPScraperLogic {
         }
 
         storage = new ScrapedItemsStorage(business, province);
-        executorService = Executors.newSingleThreadExecutor();
+        ExecutorService executorService = Executors.newSingleThreadExecutor();
         future = executorService.submit(new Runnable() {
             public void run() {
                 scrapedItemsCount = 0;
@@ -260,95 +112,70 @@ public class YPScraperLogic {
                             }
                         }
                         postalCodeIndex++;
-                        saveProperties();
+                        propertiesService.saveProperties();
                     }
                     updateMultipleSearchGUI(true);
                     saveDataToFile();
                 }
                 continueWork = false;
                 running = false;
-                saveProperties();
+                propertiesService.saveProperties();
             }
         });
-        Thread thread = new Thread() {
-            public void run() {
-                parent.getBtnStart().setEnabled(false);
-                parent.getBtnStop().setEnabled(true);
-                parent.getBtnOutputPath().setEnabled(false);
-                parent.getBtnChooseCSVPostaCodesPath().setEnabled(false);
-                while (true) {
-                    if (future.isDone()) {
-                        System.out.println("Program: Finished");
-                        parent.logger.log(Level.INFO, "Program: Finished");
-                        break;
-                    }
+        Thread thread = new Thread(() -> {
+            parent.getBtnStart().setEnabled(false);
+            parent.getBtnStop().setEnabled(true);
+            parent.getBtnOutputPath().setEnabled(false);
+            parent.getBtnChooseCSVPostaCodesPath().setEnabled(false);
+            while (true) {
+                if (future.isDone()) {
+                    System.out.println("Program: Finished");
+                    LoggerService.logMessage("Program: Finished");
+                    break;
                 }
-                parent.getBtnStart().setEnabled(true);
-                parent.getBtnStop().setEnabled(false);
-                parent.getBtnOutputPath().setEnabled(true);
-                parent.getBtnChooseCSVPostaCodesPath().setEnabled(true);
             }
-        };
+            parent.getBtnStart().setEnabled(true);
+            parent.getBtnStop().setEnabled(false);
+            parent.getBtnOutputPath().setEnabled(true);
+            parent.getBtnChooseCSVPostaCodesPath().setEnabled(true);
+        });
         thread.start();
     }
 
-    public void updateMultipleSearchGUI(boolean isFinished) {
+    private void updateMultipleSearchGUI(boolean isFinished) {
         if (!SwingUtilities.isEventDispatchThread()) {
-            SwingUtilities.invokeLater(new Runnable() {
-                @Override
-                public void run() {
-                    if (postalCodeIndex <= postalCodes.length) {
-                        int postalCodeItem = postalCodeIndex + 1;
-                        parent.getTextFieldStatus().setText(postalCodeItem + "/" + postalCodes.length + " locations processed. " + scrapedItemsCount + " items scraped.");
-                    }
-                    if (isFinished) {
-                        postalCodeIndex--;
-                        parent.getTextFieldStatus().setText("Finished. " + postalCodeIndex + "/" + postalCodes.length + " locations processed. " + scrapedItemsCount + " items scraped.");
-                    }
+            SwingUtilities.invokeLater(() -> {
+                if (postalCodeIndex <= postalCodes.length) {
+                    int postalCodeItem = postalCodeIndex + 1;
+                    parent.getTextFieldStatus().setText(postalCodeItem + "/" + postalCodes.length + " locations processed. " + scrapedItemsCount + " items scraped.");
+                }
+                if (isFinished) {
+                    postalCodeIndex--;
+                    parent.getTextFieldStatus().setText("Finished. " + postalCodeIndex + "/" + postalCodes.length + " locations processed. " + scrapedItemsCount + " items scraped.");
                 }
             });
-            return;
         }
     }
 
-    public void updateOneLocationSearchGUI(boolean isFinished) {
+    private void updateOneLocationSearchGUI(boolean isFinished) {
         if (!SwingUtilities.isEventDispatchThread()) {
-            SwingUtilities.invokeLater(new Runnable() {
-                @Override
-                public void run() {
-                    if (isFinished) {
-                        parent.getTextFieldStatus().setText("Finished. "+scrapedItemsCount + " items scraped.");
-                    }
-                    else
-                    {
-                        parent.getTextFieldStatus().setText(scrapedItemsCount + " items scraped.");
-                    }
+            SwingUtilities.invokeLater(() -> {
+                if (isFinished) {
+                    parent.getTextFieldStatus().setText("Finished. "+scrapedItemsCount + " items scraped.");
+                }
+                else
+                {
+                    parent.getTextFieldStatus().setText(scrapedItemsCount + " items scraped.");
                 }
             });
-            return;
         }
     }
 
-    public void removeOldFileIfExists() {
-        if (parent.outputFolder != null) {
-            Path path = null;
-            if (!parent.getTextFieldLocation().getText().equalsIgnoreCase("")) {
-                path = Paths.get(parent.outputFolder.getAbsolutePath() + separator + business + "_" + province + ".csv");
-            } else {
-                path = Paths.get(parent.outputFolder.getAbsolutePath() + separator + business + ".csv");
-            }
-            try {
-                Files.deleteIfExists(path);
-            } catch (IOException ex) {
-                parent.logger.log(Level.SEVERE, null, ex);
-            }
-        }
-    }
+
 
     private void parseCurrentPage(Document doc) {
         if (doc == null) {
-            System.out.println("Return: parseCurrentPage");
-            parent.logger.log(Level.WARNING, "Scraped document is null");
+            LoggerService.logMessage("Scraped document is null");
             return;
         }
         Element items = (Element) doc.select("div.resultList").first().childNode(1);
@@ -360,7 +187,7 @@ public class YPScraperLogic {
             storage.List.add(new ScrapedItem(title, address.replace("Get directions", ""), processLink(link), province));
         }
         scrapedItemsCount += els.size();
-        parent.logger.log(Level.INFO, String.valueOf(storage.List.size() +" Location: "+ province +" Link: "+ currentURL));
+        LoggerService.logMessage(storage.List.size() +" Location: "+ province +" Link: "+ currentURL);
     }
 
     private String processLink(String link) {
@@ -373,8 +200,7 @@ public class YPScraperLogic {
             result = res.substring(res.indexOf("redirect=") + 1);
             result = result.replace("edirect=", "");
         } catch (UnsupportedEncodingException ex) {
-            System.out.println(ex.getMessage());
-            parent.logger.log(Level.SEVERE, null, ex);
+            LoggerService.logException(ex);
         }
         return result;
     }
@@ -388,16 +214,15 @@ public class YPScraperLogic {
                     .timeout(0)
                     .get();
         } catch (Exception ex) {
-            System.out.println(ex.getMessage());
-            parent.logger.log(Level.SEVERE, null, ex);
-            parent.logger.log(Level.INFO, String.valueOf(storage.List.size() +" Location: "+ province +" Link: "+ currentURL));
+            LoggerService.logException(ex);
+            LoggerService.logMessage(String.valueOf(storage.List.size() +" Location: "+ province +" Link: "+ currentURL));
         }
         return doc;
     }
 
     private int countPages() {
         Document doc = scrapePage();
-        Element countElement = doc.select("span.contentControls-msg").select("strong").first();
+        Element countElement = doc.select("span.pageCount").select("span").last();
         String count= "";
         if (countElement != null) {
             count = countElement.text().replace(",", "");
@@ -426,6 +251,7 @@ public class YPScraperLogic {
     private void prepareURL(int pageNumber) {
         String url;
         String[] splited = business.split("\\s+");
+        String CABaseURLPart = "https://www.yellowpages.ca/search/si";
         url = CABaseURLPart + "/" + pageNumber + "/";
         if (splited.length > 0) {
             for (int i = 0; i < splited.length; i++) {
@@ -450,43 +276,10 @@ public class YPScraperLogic {
         currentURL = url;
     }
 
-    public void createOutputFile() {
-        StringBuilder sb = new StringBuilder();
-        Path path = null;
 
-        if (!business.equalsIgnoreCase(parent.getTextFieldBusiness().getText())) {
-            business = parent.getTextFieldBusiness().getText();
-        }
-        if (!province.equalsIgnoreCase(parent.getTextFieldLocation().getText())) {
-            province = parent.getTextFieldLocation().getText();
-        }
-
-        if (!parent.getTextFieldLocation().getText().equalsIgnoreCase("")) {
-            path = Paths.get(parent.outputFolder.getAbsolutePath() + separator + business + "_" + province + ".csv");
-        } else {
-            path = Paths.get(parent.outputFolder.getAbsolutePath() + separator + business + ".csv");
-        }
-
-        sb.append("Link");
-        sb.append(',');
-        sb.append("\"Name\"");
-        sb.append(',');
-        sb.append("\"Address\"");
-        sb.append(',');
-        sb.append("\"Location\"");
-        sb.append('\n');
+    void saveDataToFile() {
         try {
-            Files.createDirectories(path.getParent());
-            Files.write(path, sb.toString().getBytes(), StandardOpenOption.WRITE, StandardOpenOption.CREATE);
-        } catch (IOException ex) {
-            parent.logger.log(Level.SEVERE, null, ex);
-        }
-    }
-
-    public void saveDataToFile() {
-        StringBuilder sb = new StringBuilder();
-        try {
-            Path path = null;
+            Path path;
             if (!parent.getTextFieldLocation().getText().equalsIgnoreCase("")) {
                 path = Paths.get(parent.outputFolder.getAbsolutePath() + separator + business + "_" + province + ".csv");
             } else {
@@ -495,21 +288,24 @@ public class YPScraperLogic {
             if (!Files.exists(path, LinkOption.NOFOLLOW_LINKS)) {
                 createOutputFile();
             }
+            StringBuilder sb = new StringBuilder();
             for (int i = 0; i < storage.List.size(); i++) {
+                sb.setLength(0);
                 sb.append(storage.List.get(i).Link);
                 sb.append(',');
-                sb.append("\"" + storage.List.get(i).Name + "\"");
+                sb.append("\"").append(storage.List.get(i).Name).append("\"");
                 sb.append(',');
-                sb.append("\"" + storage.List.get(i).Address + "\"");
+                sb.append("\"").append(storage.List.get(i).Address).append("\"");
                 sb.append(',');
-                sb.append("\"" + storage.List.get(i).Location + "\"");
+                sb.append("\"").append(storage.List.get(i).Location).append("\"");
                 sb.append('\n');
             }
-            Files.createDirectories(path.getParent());
-            Files.write(path, sb.toString().getBytes(), StandardOpenOption.WRITE, StandardOpenOption.APPEND);
+            FileWriter writer = new FileWriter(path.toFile(), true);
+            writer.append(sb.toString());
+            writer.flush();
+            writer.close();
         } catch (IOException ex) {
-            System.out.println(ex.getMessage());
-            parent.logger.log(Level.SEVERE, null, ex);
+            LoggerService.logException(ex);
             JOptionPane.showMessageDialog(null, "Something wrong with output file: \n" + getPrintStacktrace(ex), "Data wasn't saved ", JOptionPane.ERROR_MESSAGE);
         }
         storage.List.clear();
@@ -542,13 +338,11 @@ public class YPScraperLogic {
             }
             postalCodes = result.toArray(new String[0]);
         } catch (FileNotFoundException e) {
-            parent.logger.log(Level.SEVERE, null, e);
-            System.out.println(e.getMessage());
+            LoggerService.logException(e);
             JOptionPane.showMessageDialog(null, "Something wrong with input CSV file. Try to check path and start again.", "Input csv file problem", JOptionPane.ERROR_MESSAGE);
             continueWork = false;
         } catch (IOException e) {
-            parent.logger.log(Level.SEVERE, null, e);
-            System.out.println(e.getMessage());
+            LoggerService.logException(e);
             JOptionPane.showMessageDialog(null, "Something wrong with input CSV file.", "Input csv file problem", JOptionPane.ERROR_MESSAGE);
             continueWork = false;
         } finally {
@@ -557,7 +351,7 @@ public class YPScraperLogic {
                     br.close();
                 } catch (IOException e) {
                     System.out.println(e.getMessage());
-                    parent.logger.log(Level.SEVERE, null, e);
+                    LoggerService.logException(e);
                 }
             }
         }
