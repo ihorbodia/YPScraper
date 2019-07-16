@@ -1,11 +1,12 @@
 package Models;
 
+import java.io.File;
+
 public class AppPropertiesModel {
     public String business;
     public String province;
-    public String connectionTimeout;
-    public String outputFolder;
-    public String csvPostalCodesFile;
-    public String running;
-    public String postalCodeIndex;
+    public File outputFolder;
+    public boolean running;
+    public int postalCodeIndex;
+    public File inputLocationsFile;
 }

@@ -5,16 +5,14 @@ import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
-import Services.DIResolver;
-import Services.FilesService;
-import Services.LoggerService;
+
+import Services.*;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -26,7 +24,7 @@ import org.jsoup.select.Elements;
  */
 public class YPScraperLogic {
     //private static String[] provinces = {"AB", "BC", "MB", "NB", "NL", "NT", "NS", "NU", "ON", "PE", "QC", "SK", "YT"};
-    private String[] postalCodes = null;
+
     private String business;
     private String currentURL;
     boolean continueWork = false;
@@ -49,78 +47,66 @@ public class YPScraperLogic {
     }
 
     public void Run(boolean isStartRun) {
-        diResolver.getPropertiesService().restoreProperties();
-
-        business = diResolver.getGuiService().getTextFieldBusiness();
-        province = diResolver.getGuiService().getTextFieldLocation();
-
+        GuiService guiService = diResolver.getGuiService();
+        PropertiesService propertiesService = diResolver.getPropertiesService();
         FilesService filesService = diResolver.getFilesService();
-        filesService.
-
-        if (parent.outputFolder == null) {
-            File f = new File(".");
-            parent.outputFolder = new File(f.getAbsolutePath()).getParentFile();
-            parent.getlblOutputPathData().setText(parent.outputFolder.getName());
-        }
 
         storage = new ScrapedItemsStorage(business, province);
         ExecutorService executorService = Executors.newSingleThreadExecutor();
-        future = executorService.submit(new Runnable() {
-            public void run() {
-                scrapedItemsCount = 0;
-                continueWork = true;
-                running = true;
-                if (!province.equalsIgnoreCase("")) {
-                    isMultipleSearch = false;
+        future = executorService.submit(() -> {
+            scrapedItemsCount = 0;
+            continueWork = true;
+            running = true;
+            if (province.equalsIgnoreCase("")) {
+                if (isStartRun) {
+                    postalCodeIndex = 0;
+                }
+                if (parent.inputLocationsFile == null) {
+                    JOptionPane.showMessageDialog(null, "Input CSV file not specified, program cannot continue.", "Select input locations list", JOptionPane.ERROR_MESSAGE);
+                    continueWork = false;
+                    running = false;
+                    return;
+                }
+                String[] postalCodes = filesService.getPostalCodes(parent.inputLocationsFile.getAbsolutePath());
+                isMultipleSearch = true;
+                while (continueWork) {
                     prepareURL(1);
                     int pages = countPages();
-                    updateOneLocationSearchGUI(false);
+                    guiService.updateMultipleSearchGUI(false, postalCodeIndex, postalCodes.length, storage.List.size());
                     for (int i = 2; i <= pages; i++) {
                         prepareURL(i);
                         Document doc = scrapePage();
                         parseCurrentPage(doc);
-                        updateOneLocationSearchGUI(false);
+                        updateMultipleSearchGUI(false);
                         if (storage.List.size() > 10000) {
                             saveDataToFile();
                         }
                     }
-                    updateOneLocationSearchGUI(true);
-                    saveDataToFile();
-                } else {
-                    if (isStartRun) {
-                        postalCodeIndex = 0;
-                    }
-                    if (parent.inputLocationsFile == null) {
-                        JOptionPane.showMessageDialog(null, "Input CSV file not specified, program cannot continue.", "Select input locations list", JOptionPane.ERROR_MESSAGE);
-                        continueWork = false;
-                        running = false;
-                        return;
-                    }
-                    getPostalCodes(parent.inputLocationsFile.getAbsolutePath());
-                    isMultipleSearch = true;
-                    while (continueWork) {
-                        prepareURL(1);
-                        int pages = countPages();
-                        updateMultipleSearchGUI(false);
-                        for (int i = 2; i <= pages; i++) {
-                            prepareURL(i);
-                            Document doc = scrapePage();
-                            parseCurrentPage(doc);
-                            updateMultipleSearchGUI(false);
-                            if (storage.List.size() > 10000) {
-                                saveDataToFile();
-                            }
-                        }
-                        postalCodeIndex++;
-                        propertiesService.saveProperties();
-                    }
-                    updateMultipleSearchGUI(true);
-                    saveDataToFile();
+                    postalCodeIndex++;
+                    propertiesService.saveProperties();
                 }
-                continueWork = false;
-                running = false;
-                propertiesService.saveProperties();
+                guiService.updateMultipleSearchGUI(false, postalCodeIndex, postalCodes.length, storage.List.size());
+                saveDataToFile();
+            } else {
+                isMultipleSearch = false;
+                prepareURL(1);
+                int pages = countPages();
+                updateOneLocationSearchGUI(false);
+                for (int i = 2; i <= pages; i++) {
+                    prepareURL(i);
+                    Document doc = scrapePage();
+                    parseCurrentPage(doc);
+                    updateOneLocationSearchGUI(false);
+                    if (storage.List.size() > 10000) {
+                        saveDataToFile();
+                    }
+                }
+                updateOneLocationSearchGUI(true);
+                saveDataToFile();
             }
+            continueWork = false;
+            running = false;
+            propertiesService.saveProperties();
         });
         Thread thread = new Thread(() -> {
             parent.getBtnStart().setEnabled(false);
@@ -141,36 +127,6 @@ public class YPScraperLogic {
         });
         thread.start();
     }
-
-    private void updateMultipleSearchGUI(boolean isFinished) {
-        if (!SwingUtilities.isEventDispatchThread()) {
-            SwingUtilities.invokeLater(() -> {
-                if (postalCodeIndex <= postalCodes.length) {
-                    int postalCodeItem = postalCodeIndex + 1;
-                    parent.getTextFieldStatus().setText(postalCodeItem + "/" + postalCodes.length + " locations processed. " + scrapedItemsCount + " items scraped.");
-                }
-                if (isFinished) {
-                    postalCodeIndex--;
-                    parent.getTextFieldStatus().setText("Finished. " + postalCodeIndex + "/" + postalCodes.length + " locations processed. " + scrapedItemsCount + " items scraped.");
-                }
-            });
-        }
-    }
-
-    private void updateOneLocationSearchGUI(boolean isFinished) {
-        if (!SwingUtilities.isEventDispatchThread()) {
-            SwingUtilities.invokeLater(() -> {
-                if (isFinished) {
-                    parent.getTextFieldStatus().setText("Finished. "+scrapedItemsCount + " items scraped.");
-                }
-                else
-                {
-                    parent.getTextFieldStatus().setText(scrapedItemsCount + " items scraped.");
-                }
-            });
-        }
-    }
-
 
 
     private void parseCurrentPage(Document doc) {
@@ -319,41 +275,5 @@ public class YPScraperLogic {
         return writer.toString();
     }
 
-    public void getPostalCodes(String path) {
-        String csvFile = path;
-        BufferedReader br = null;
-        String line = "";
-        String cvsSplitBy = ",";
-        ArrayList<String> result = new ArrayList<String>();
-        try {
-            br = new BufferedReader(new FileReader(csvFile));
-            boolean header = true;
-            while ((line = br.readLine()) != null) {
-                if (header) {
-                    header = false;
-                    continue;
-                }
-                String[] country = line.split(cvsSplitBy);
-                result.add(country[0]);
-            }
-            postalCodes = result.toArray(new String[0]);
-        } catch (FileNotFoundException e) {
-            LoggerService.logException(e);
-            JOptionPane.showMessageDialog(null, "Something wrong with input CSV file. Try to check path and start again.", "Input csv file problem", JOptionPane.ERROR_MESSAGE);
-            continueWork = false;
-        } catch (IOException e) {
-            LoggerService.logException(e);
-            JOptionPane.showMessageDialog(null, "Something wrong with input CSV file.", "Input csv file problem", JOptionPane.ERROR_MESSAGE);
-            continueWork = false;
-        } finally {
-            if (br != null) {
-                try {
-                    br.close();
-                } catch (IOException e) {
-                    System.out.println(e.getMessage());
-                    LoggerService.logException(e);
-                }
-            }
-        }
-    }
+
 }

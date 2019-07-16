@@ -1,28 +1,69 @@
 package Services;
 
-import java.io.File;
-import java.io.IOException;
+import javax.swing.*;
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
+import java.util.ArrayList;
 
 public class FilesService {
 
-    public File outputFolder;
-    public File inputLocationsFile;
+    private File outputFolder;
+    private File inputLocationsFile;
     private String separator = File.separator;
+    private String[] postalCodes = null;
 
     FilesService() {
 
     }
+
+    public void getPostalCodes(String path) {
+        String csvFile = path;
+        BufferedReader br = null;
+        String line = "";
+        String cvsSplitBy = ",";
+        ArrayList<String> result = new ArrayList<String>();
+        try {
+            br = new BufferedReader(new FileReader(csvFile));
+            boolean header = true;
+            while ((line = br.readLine()) != null) {
+                if (header) {
+                    header = false;
+                    continue;
+                }
+                String[] country = line.split(cvsSplitBy);
+                result.add(country[0]);
+            }
+            String[] postalCodes = result.toArray(new String[0]);
+        } catch (FileNotFoundException e) {
+            LoggerService.logException(e);
+            JOptionPane.showMessageDialog(null, "Something wrong with input CSV file. Try to check path and start again.", "Input csv file problem", JOptionPane.ERROR_MESSAGE);
+            continueWork = false;
+        } catch (IOException e) {
+            LoggerService.logException(e);
+            JOptionPane.showMessageDialog(null, "Something wrong with input CSV file.", "Input csv file problem", JOptionPane.ERROR_MESSAGE);
+            continueWork = false;
+        } finally {
+            if (br != null) {
+                try {
+                    br.close();
+                } catch (IOException e) {
+                    System.out.println(e.getMessage());
+                    LoggerService.logException(e);
+                }
+            }
+        }
+    }
+
     public void removeOldFileIfExists(String business, String province, String location) {
-        if (outputFolder != null) {
+        if (getOutputFolder() != null) {
             Path path = null;
             if (!parent.getTextFieldLocation().getText().equalsIgnoreCase("")) {
-                path = Paths.get(outputFolder.getAbsolutePath() + separator + business + "_" + province + ".csv");
+                path = Paths.get(getOutputFolder().getAbsolutePath() + separator + business + "_" + province + ".csv");
             } else {
-                path = Paths.get(outputFolder.getAbsolutePath() + separator + business + ".csv");
+                path = Paths.get(getOutputFolder().getAbsolutePath() + separator + business + ".csv");
             }
             try {
                 Files.deleteIfExists(path);
@@ -65,4 +106,17 @@ public class FilesService {
         }
     }
 
+    public File getOutputFolder() {
+        return outputFolder;
+    }
+
+    public void  setOutputFolder(File folder) {
+        if (folder != null) {
+            outputFolder = folder;
+        }
+    }
+
+    public File getInputLocationsFile() {
+        return inputLocationsFile;
+    }
 }

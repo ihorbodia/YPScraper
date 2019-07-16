@@ -2,6 +2,7 @@ package Services;
 
 import GUI.WindowHandler;
 import GUI.YPScraper;
+import Models.AppPropertiesModel;
 
 import javax.swing.*;
 import java.awt.*;
@@ -10,7 +11,7 @@ import java.util.logging.LogRecord;
 
 public class GuiService {
 
-    YPScraper mainWindow;
+    private YPScraper mainWindow;
     GuiService() {
         mainWindow = new YPScraper();
         mainWindow.pack();
@@ -22,6 +23,40 @@ public class GuiService {
         h.publish(r);
     }
 
+    public void guiRestoreByProperties(AppPropertiesModel appPropertiesModel) {
+        mainWindow.getTextFieldBusiness().setText(appPropertiesModel.business);
+        mainWindow.getTextFieldLocation().setText(appPropertiesModel.province);
+        mainWindow.getlblOutputPathData().setText(appPropertiesModel.outputFolder.getName());
+        mainWindow.getlblPostalCodesPathData().setText(appPropertiesModel.inputLocationsFile.getName());
+    }
+
+    public void updateOneLocationSearchGUI(boolean isFinished) {
+        if (!SwingUtilities.isEventDispatchThread()) {
+            SwingUtilities.invokeLater(() -> {
+                if (isFinished) {
+                    mainWindow.getTextFieldStatus().setText("Finished. "+scrapedItemsCount + " items scraped.");
+                }
+                else
+                {
+                    mainWindow.getTextFieldStatus().setText(scrapedItemsCount + " items scraped.");
+                }
+            });
+        }
+    }
+
+    public void updateMultipleSearchGUI(boolean isFinished, final int postalCodeIndex, int postalCodesLength, int scrapedItemsCount) {
+        if (!SwingUtilities.isEventDispatchThread()) {
+            SwingUtilities.invokeLater(() -> {
+                if (postalCodeIndex <= postalCodesLength) {
+                    int postalCodeItem = postalCodeIndex + 1;
+                    mainWindow.getTextFieldStatus().setText(postalCodeItem + "/" + postalCodesLength + " locations processed. " + scrapedItemsCount + " items scraped.");
+                }
+                if (isFinished) {
+                    mainWindow.getTextFieldStatus().setText("Finished. " + (postalCodeIndex - 1)  + "/" + postalCodesLength + " locations processed. " + scrapedItemsCount + " items scraped.");
+                }
+            });
+        }
+    }
 
     public JLabel getlblPostalCodesPathData() {
         return mainWindow.getlblPostalCodesPathData();

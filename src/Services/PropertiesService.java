@@ -2,15 +2,18 @@ package Services;
 
 import Models.AppPropertiesModel;
 import org.apache.commons.io.FilenameUtils;
+
+import javax.swing.*;
 import java.io.*;
 import java.util.Properties;
 
-class PropertiesService {
+public class PropertiesService {
 
     private Properties properties = new Properties();
     private File propertiesFile;
     private String separator = File.separator;
     private OutputStream output = null;
+    private InputStream input = null;
 
     private void createNewPropertiesFile() {
         try {
@@ -46,23 +49,18 @@ class PropertiesService {
         }
     }
 
-    void saveProperties(AppPropertiesModel appPropertiesModel, boolean isMultipleSearch) {
+    public void saveProperties(AppPropertiesModel appPropertiesModel, boolean isMultipleSearch) {
         try {
             output = new FileOutputStream(propertiesFile.getAbsoluteFile());
-            properties.setProperty("business", parent.getTextFieldBusiness().getText());
+            properties.setProperty("business", appPropertiesModel.business);
             if (!isMultipleSearch) {
-                properties.setProperty("province", parent.getTextFieldLocation().getText());
+                properties.setProperty("province", appPropertiesModel.province);
             }
-            if (parent.outputFolder != null) {
-                parent.properties.setProperty("outputFolder", parent.outputFolder.getAbsolutePath());
-            }
-            if (parent.inputLocationsFile != null) {
-                parent.properties.setProperty("csvPostalCodesFile", parent.inputLocationsFile.getAbsolutePath());
-            }
-
-            parent.properties.setProperty("running", String.valueOf(running));
-            parent.properties.setProperty("postalCodeIndex", Integer.toString(postalCodeIndex));
-            parent.properties.store(output, null);
+            properties.setProperty("outputFolder", appPropertiesModel.outputFolder.getAbsolutePath());
+            properties.setProperty("csvPostalCodesFile", appPropertiesModel.inputLocationsFile.getAbsolutePath());
+            properties.setProperty("running", String.valueOf(appPropertiesModel.running));
+            properties.setProperty("postalCodeIndex", Integer.toString(appPropertiesModel.postalCodeIndex));
+            properties.store(output, null);
         } catch (IOException io) {
             LoggerService.logException(io);
         } finally {
@@ -77,50 +75,43 @@ class PropertiesService {
     }
 
 
+
     public AppPropertiesModel restoreProperties() {
         AppPropertiesModel appPropertiesModel = new AppPropertiesModel();
         try {
-            createNewFile();
-            input = new FileInputStream(propertiesFile.getAbsoluteFile());
-            parent.properties.load(input);
+            createNewPropertiesFile();
+            InputStream input = new FileInputStream(propertiesFile.getAbsoluteFile());
+            properties.load(input);
 
-            if (parent.properties.get("business") != null) {
-                business = parent.properties.get("business").toString();
-                parent.getTextFieldBusiness().setText(business);
+            if (properties.get("business") != null) {
+                appPropertiesModel.business = properties.get("business").toString();
             }
 
-            if (parent.properties.get("province") != null) {
-                province = parent.properties.get("province").toString();
-                parent.getTextFieldLocation().setText(province);
+            if (properties.get("province") != null) {
+                appPropertiesModel.province = properties.get("province").toString();
             }
 
-            if (parent.properties.get("outputFolder") != null) {
-                String path = parent.properties.get("outputFolder").toString();
+            if (properties.get("outputFolder") != null) {
+                String path = properties.get("outputFolder").toString();
                 if (!path.equalsIgnoreCase("")) {
-                    parent.outputFolder = new File(path);
-                    parent.getlblOutputPathData().setText(parent.outputFolder.getName());
+                    appPropertiesModel.outputFolder = new File(path);
                 }
             }
 
-            if (parent.properties.get("csvPostalCodesFile") != null) {
-                String csvPath = parent.properties.get("csvPostalCodesFile").toString();
+            if (properties.get("csvPostalCodesFile") != null) {
+                String csvPath = properties.get("csvPostalCodesFile").toString();
                 if (!csvPath.equalsIgnoreCase("")) {
-                    parent.inputLocationsFile = new File(csvPath);
-                    parent.getlblPostalCodesPathData().setText(parent.inputLocationsFile.getName());
+                    appPropertiesModel.inputLocationsFile = new File(csvPath);
                 }
             }
 
-            if (parent.properties.get("postalCodeIndex") != null) {
-                String postalCodeIndexStr = parent.properties.get("postalCodeIndex").toString();
-                postalCodeIndex = Integer.parseInt(postalCodeIndexStr);
+            if (properties.get("postalCodeIndex") != null) {
+                String postalCodeIndexStr = properties.get("postalCodeIndex").toString();
+                appPropertiesModel.postalCodeIndex = Integer.parseInt(postalCodeIndexStr);
             }
-            if (parent.properties.get("running") != null) {
-                String runningStr = parent.properties.get("running").toString();
-                running = Boolean.parseBoolean(runningStr);
-            }
-
-            if (running) {
-                continueRun();
+            if (properties.get("running") != null) {
+                String runningStr = properties.get("running").toString();
+                appPropertiesModel.running = Boolean.parseBoolean(runningStr);
             }
         } catch (IOException io) {
             LoggerService.logException(io);

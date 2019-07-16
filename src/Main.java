@@ -7,7 +7,8 @@ public class Main {
     public static void main(String[] args) {
 
         diResolver = new DIResolver();
-        YPScraperLogic ypScraperLogic = new YPScraperLogic(diResolver);
+        YPScraperLogic ypScraperLogic = new YPScraperLogic();
+
 
         ypScraperLogic.Run(false);
     }
