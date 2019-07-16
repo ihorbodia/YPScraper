@@ -2,8 +2,8 @@ package Services;
 
 import GUI.WindowHandler;
 
-import java.util.Arrays;
-import java.util.logging.Level;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.logging.Logger;
 
 public class LoggerService {
@@ -21,8 +21,15 @@ public class LoggerService {
     }
 
     public static void logException(Exception ex) {
-        ex.printStackTrace();
         LoggerService.logMessage(ex.getMessage());
-        LoggerService.logMessage(Arrays.toString(ex.getStackTrace()));
+        LoggerService.logMessage(getPrintStacktrace(ex));
+    }
+
+    private static String getPrintStacktrace(Exception ex) {
+        StringWriter writer = new StringWriter();
+        PrintWriter printWriter = new PrintWriter(writer);
+        ex.printStackTrace(printWriter);
+        printWriter.flush();
+        return writer.toString();
     }
 }

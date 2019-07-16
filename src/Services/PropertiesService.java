@@ -2,8 +2,6 @@ package Services;
 
 import Models.AppPropertiesModel;
 import org.apache.commons.io.FilenameUtils;
-
-import javax.swing.*;
 import java.io.*;
 import java.util.Properties;
 
@@ -14,6 +12,7 @@ public class PropertiesService {
     private String separator = File.separator;
     private OutputStream output = null;
     private InputStream input = null;
+
 
     private void createNewPropertiesFile() {
         try {
@@ -36,6 +35,25 @@ public class PropertiesService {
                 properties.store(output, null);
             }
             propertiesFileTemp.delete();
+        } catch (IOException io) {
+            LoggerService.logException(io);
+        } finally {
+            if (output != null) {
+                try {
+                    output.close();
+                } catch (IOException io) {
+                    LoggerService.logException(io);
+                }
+            }
+        }
+    }
+
+
+    public void saveLocationsFileLocation(File locationsFile) {
+        try {
+        output = new FileOutputStream(propertiesFile.getAbsoluteFile());
+            properties.setProperty("csvPostalCodesFile", locationsFile.getAbsolutePath());
+            properties.store(output, null);
         } catch (IOException io) {
             LoggerService.logException(io);
         } finally {
@@ -124,5 +142,6 @@ public class PropertiesService {
                 }
             }
         }
+        return appPropertiesModel;
     }
 }

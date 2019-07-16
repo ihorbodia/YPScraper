@@ -1,7 +1,9 @@
 package Actions;
 
-import GUI.YPScraper;
+import Models.AppPropertiesModel;
 import Services.DIResolver;
+import Services.GuiService;
+import Services.PropertiesService;
 
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -17,13 +19,15 @@ public class SetCsvPostalCodesAction implements ActionListener {
     @Override
     public void actionPerformed(ActionEvent e) {
         System.out.println("Set postal codes action raised");
-        FileDialog dialog = new FileDialog(YPScraper.this, "Select File to Open");
+        GuiService guiService = diResolver.getGuiService();
+        PropertiesService propertiesService = diResolver.getPropertiesService();
+
+        FileDialog dialog = guiService.getDialog();
         dialog.setVisible(true);
         if (dialog.getFile() != null && !dialog.getFile().equalsIgnoreCase("") && dialog.getFile().toLowerCase().endsWith(".csv")) {
-            inputLocationsFile = new File(dialog.getDirectory() + dialog.getFile());
-            getlblPostalCodesPathData().setText(inputLocationsFile.getName());
-            logic.getPostalCodes(inputLocationsFile.getAbsolutePath());
-            logic.saveProperties();
+            File inputLocationsFile = new File(dialog.getDirectory() + dialog.getFile());
+            guiService.getlblPostalCodesPathData().setText(inputLocationsFile.getName());
+            propertiesService.saveLocationsFileLocation(inputLocationsFile);
         }
     }
 }

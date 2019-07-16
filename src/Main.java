@@ -1,15 +1,11 @@
-import Logic.YPScraperLogic;
-import Services.DIResolver;
+import Actions.ApplicationStartedAction;
+import java.awt.event.ActionEvent;
 
 public class Main {
-    static DIResolver diResolver;
 
     public static void main(String[] args) {
 
-        diResolver = new DIResolver();
-        YPScraperLogic ypScraperLogic = new YPScraperLogic();
-
-
-        ypScraperLogic.Run(false);
+        ApplicationStartedAction  applicationStartedAction = new ApplicationStartedAction();
+        applicationStartedAction.actionPerformed(new ActionEvent(null, 0, null));
     }
 }

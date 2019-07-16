@@ -1,11 +1,10 @@
 package Services;
 
+import Logic.ScrapedItem;
+
 import javax.swing.*;
 import java.io.*;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
+import java.nio.file.*;
 import java.util.ArrayList;
 
 public class FilesService {
@@ -19,14 +18,36 @@ public class FilesService {
 
     }
 
-    public void getPostalCodes(String path) {
-        String csvFile = path;
+     public synchronized void saveDataToFile(ArrayList<ScrapedItem> items) {
+        try {
+            StringBuilder sb = new StringBuilder();
+            for (ScrapedItem item : items) {
+                sb.setLength(0);
+                sb.append(item.Link);
+                sb.append(',');
+                sb.append("\"").append(item.Name).append("\"");
+                sb.append(',');
+                sb.append("\"").append(item.Address).append("\"");
+                sb.append(',');
+                sb.append("\"").append(item.Location).append("\"");
+                sb.append('\n');
+            }
+            FileWriter writer = new FileWriter(outputFolder, true);
+            writer.append(sb.toString());
+            writer.flush();
+            writer.close();
+        } catch (IOException ex) {
+            LoggerService.logException(ex);
+        }
+    }
+
+    public ArrayList<String> getPostalCodes() {
         BufferedReader br = null;
         String line = "";
         String cvsSplitBy = ",";
         ArrayList<String> result = new ArrayList<String>();
         try {
-            br = new BufferedReader(new FileReader(csvFile));
+            br = new BufferedReader(new FileReader(inputLocationsFile));
             boolean header = true;
             while ((line = br.readLine()) != null) {
                 if (header) {
@@ -36,15 +57,13 @@ public class FilesService {
                 String[] country = line.split(cvsSplitBy);
                 result.add(country[0]);
             }
-            String[] postalCodes = result.toArray(new String[0]);
+            return result;
         } catch (FileNotFoundException e) {
             LoggerService.logException(e);
             JOptionPane.showMessageDialog(null, "Something wrong with input CSV file. Try to check path and start again.", "Input csv file problem", JOptionPane.ERROR_MESSAGE);
-            continueWork = false;
         } catch (IOException e) {
             LoggerService.logException(e);
             JOptionPane.showMessageDialog(null, "Something wrong with input CSV file.", "Input csv file problem", JOptionPane.ERROR_MESSAGE);
-            continueWork = false;
         } finally {
             if (br != null) {
                 try {
@@ -55,39 +74,27 @@ public class FilesService {
                 }
             }
         }
+        return result;
     }
 
-    public void removeOldFileIfExists(String business, String province, String location) {
+    public void removeOldFileIfExists() {
         if (getOutputFolder() != null) {
-            Path path = null;
-            if (!parent.getTextFieldLocation().getText().equalsIgnoreCase("")) {
-                path = Paths.get(getOutputFolder().getAbsolutePath() + separator + business + "_" + province + ".csv");
-            } else {
-                path = Paths.get(getOutputFolder().getAbsolutePath() + separator + business + ".csv");
-            }
             try {
-                Files.deleteIfExists(path);
+                Files.deleteIfExists(outputFolder.toPath());
             } catch (IOException ex) {
                 LoggerService.logException(ex);
             }
         }
     }
 
-    void createEmptyOutputFile() {
+    public void createEmptyOutputFile(String business, String location) {
         StringBuilder sb = new StringBuilder();
         Path path = null;
 
-        if (!business.equalsIgnoreCase(parent.getTextFieldBusiness().getText())) {
-            business = parent.getTextFieldBusiness().getText();
-        }
-        if (!province.equalsIgnoreCase(parent.getTextFieldLocation().getText())) {
-            province = parent.getTextFieldLocation().getText();
-        }
-
-        if (!parent.getTextFieldLocation().getText().equalsIgnoreCase("")) {
-            path = Paths.get(parent.outputFolder.getAbsolutePath() + separator + business + "_" + province + ".csv");
+        if (location.equalsIgnoreCase("")) {
+            path = Paths.get(outputFolder.getAbsolutePath() + separator + business + ".csv");
         } else {
-            path = Paths.get(parent.outputFolder.getAbsolutePath() + separator + business + ".csv");
+            path = Paths.get(outputFolder.getAbsolutePath() + separator + business + "_" + location + ".csv");
         }
 
         sb.append("Link");

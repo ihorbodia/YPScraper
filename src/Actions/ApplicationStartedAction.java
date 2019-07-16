@@ -12,7 +12,7 @@ import java.io.File;
 
 public class ApplicationStartedAction implements ActionListener {
 
-    DIResolver diResolver;
+    private DIResolver diResolver;
     public ApplicationStartedAction() {
         diResolver = new DIResolver();
     }
@@ -27,7 +27,8 @@ public class ApplicationStartedAction implements ActionListener {
         guiService.guiRestoreByProperties(appPropertiesModel);
 
         if (appPropertiesModel.running) {
-            diResolver.getYpScraperLogic().Run(false);
+            StartAction startAction = new StartAction();
+            startAction.actionPerformed(new ActionEvent(this, ActionEvent.ACTION_PERFORMED, null));
         }
 
         if(filesService.getOutputFolder() == null) {

@@ -3,7 +3,6 @@ package Services;
 import GUI.WindowHandler;
 import GUI.YPScraper;
 import Models.AppPropertiesModel;
-
 import javax.swing.*;
 import java.awt.*;
 import java.util.logging.Level;
@@ -23,6 +22,10 @@ public class GuiService {
         h.publish(r);
     }
 
+    public FileDialog getDialog() {
+        return new FileDialog(mainWindow, "Select File to Open");
+    }
+
     public void guiRestoreByProperties(AppPropertiesModel appPropertiesModel) {
         mainWindow.getTextFieldBusiness().setText(appPropertiesModel.business);
         mainWindow.getTextFieldLocation().setText(appPropertiesModel.province);
@@ -30,7 +33,7 @@ public class GuiService {
         mainWindow.getlblPostalCodesPathData().setText(appPropertiesModel.inputLocationsFile.getName());
     }
 
-    public void updateOneLocationSearchGUI(boolean isFinished) {
+    public void updateOneLocationSearchGUI(boolean isFinished, String scrapedItemsCount) {
         if (!SwingUtilities.isEventDispatchThread()) {
             SwingUtilities.invokeLater(() -> {
                 if (isFinished) {
@@ -56,6 +59,13 @@ public class GuiService {
                 }
             });
         }
+    }
+
+    public void changeApplicationState(boolean isWork) {
+       mainWindow.getBtnStart().setEnabled(!isWork);
+       mainWindow.getBtnStop().setEnabled(isWork);
+       mainWindow.getBtnOutputPath().setEnabled(!isWork);
+       mainWindow.getBtnChooseCSVPostaCodesPath().setEnabled(!isWork);
     }
 
     public JLabel getlblPostalCodesPathData() {
@@ -106,4 +116,6 @@ public class GuiService {
     public JButton getBtnCancel() {
         return mainWindow.getBtnCancel();
     }
+
+
 }
