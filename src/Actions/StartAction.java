@@ -92,8 +92,8 @@ public class StartAction implements ActionListener {
                     .timeout(0)
                     .get();
         } catch (Exception ex) {
-            LoggerService.logException(ex);
-            LoggerService.logMessage(String.valueOf(storage.List.size() +" Location: "+ province +" Link: "+ currentURL));
+            diResolver.getLoggerService().logException(ex);
+            diResolver.getLoggerService().logMessage(String.valueOf(storage.List.size() +" Location: "+ province +" Link: "+ currentURL));
         }
         return doc;
     }

@@ -58,11 +58,9 @@ public class YPScraper extends JFrame {
         setBounds(100, 100, 450, 300);
         add(PanelMain());
         setContentPane(PanelMain());
-
-        initActions();
     }
 
-    private void initActions() {
+    public void initActions() {
         getBtnStart().addActionListener(new StartAction());
         getBtnStop().addActionListener(new StopAction());
         getBtnCancel().addActionListener(new CancelAction());

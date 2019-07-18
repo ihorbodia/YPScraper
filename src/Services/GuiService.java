@@ -13,6 +13,7 @@ public class GuiService {
     private YPScraper mainWindow;
     GuiService() {
         mainWindow = new YPScraper();
+        mainWindow.initActions();
         mainWindow.pack();
         mainWindow.setSize(new Dimension(600, 210));
         mainWindow.setResizable(false);
@@ -21,6 +22,7 @@ public class GuiService {
         LogRecord r = new LogRecord(Level.WARNING, "Start logger...");
         h.publish(r);
     }
+
 
     public FileDialog getDialog() {
         return new FileDialog(mainWindow, "Select File to Open");

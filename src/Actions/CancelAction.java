@@ -14,9 +14,9 @@ public class CancelAction implements ActionListener {
 
     @Override
     public void actionPerformed(ActionEvent e) {
-        if (logic != null) {
-            logic.future.cancel(true);
-            getBtnStop().setEnabled(false);
-        }
+//        if (logic != null) {
+//            logic.future.cancel(true);
+//            getBtnStop().setEnabled(false);
+//        }
     }
 }

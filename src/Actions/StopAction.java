@@ -14,15 +14,15 @@ public class StopAction implements ActionListener {
 
     @Override
     public void actionPerformed(ActionEvent e) {
-        System.out.println("Stop");
-        if (logic != null) {
-            if (logic.future != null) {
-                logic.future.cancel(true);
-            }
-            logic.running = false;
-            logic.continueWork = false;
-            logic.saveDataToFile();
-        }
-        logic.saveProperties();
+//        System.out.println("Stop");
+//        if (logic != null) {
+//            if (logic.future != null) {
+//                logic.future.cancel(true);
+//            }
+//            logic.running = false;
+//            logic.continueWork = false;
+//            logic.saveDataToFile();
+//        }
+//        logic.saveProperties();
     }
 }

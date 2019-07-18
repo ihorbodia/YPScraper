@@ -17,11 +17,10 @@ public class SetOutputPathAction implements ActionListener {
     public void actionPerformed(ActionEvent e) {
         System.out.println("SetOutputAction");
 
-        String path = FolderUtils.selectFolderDialog();
+        String path = diResolver.getGuiService().getDialog().getDirectory();
         if (!path.equalsIgnoreCase("")) {
-            outputFolder = new File(path);
-            getlblOutputPathData().setText(outputFolder.getName());
-            logic.saveProperties();
+            File outputFolder = new File(path);
+            diResolver.getGuiService().getlblOutputPathData().setText(outputFolder.getName());
         }
     }
 }

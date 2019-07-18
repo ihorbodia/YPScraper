@@ -15,11 +15,11 @@ public class ShutdownAction implements ActionListener {
 
     @Override
     public void actionPerformed(ActionEvent e) {
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            diResolver.getPropertiesService().saveProperties();
-            if (ypScraperLogic.future != null && !logic.future.isDone()) {
-                ypScraperLogic.saveDataToFile();
-            }
-        }));
+//        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+//            diResolver.getPropertiesService().saveProperties();
+//            if (ypScraperLogic.future != null && !logic.future.isDone()) {
+//                ypScraperLogic.saveDataToFile();
+//            }
+//        }));
     }
 }

@@ -15,6 +15,7 @@ public class ApplicationStartedAction implements ActionListener {
     private DIResolver diResolver;
     public ApplicationStartedAction() {
         diResolver = new DIResolver();
+        actionPerformed(new ActionEvent(this, 0, null));
     }
 
     @Override
@@ -26,15 +27,17 @@ public class ApplicationStartedAction implements ActionListener {
         AppPropertiesModel appPropertiesModel = propertiesService.restoreProperties();
         guiService.guiRestoreByProperties(appPropertiesModel);
 
-        if (appPropertiesModel.running) {
-            StartAction startAction = new StartAction();
-            startAction.actionPerformed(new ActionEvent(this, ActionEvent.ACTION_PERFORMED, null));
-        }
-
         if(filesService.getOutputFolder() == null) {
             File f = new File(".");
             filesService.setOutputFolder(new File(f.getAbsolutePath()).getParentFile());
             guiService.getlblOutputPathData().setText(filesService.getOutputFolder().getName());
         }
+
+        if (appPropertiesModel.running) {
+            StartAction startAction = new StartAction();
+            startAction.actionPerformed(new ActionEvent(this, ActionEvent.ACTION_PERFORMED, null));
+        }
+
+
     }
 }

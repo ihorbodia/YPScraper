@@ -10,19 +10,22 @@ public class LoggerService {
 
     private static Logger logger = null;
 
-    private LoggerService(){
-        WindowHandler handler = WindowHandler.getInstance();
-        logger = Logger.getLogger("logging.handler");
-        logger.addHandler(handler);
+    LoggerService(){
+
     }
 
     public static void logMessage(String message) {
+        if (logger == null) {
+            WindowHandler handler = WindowHandler.getInstance();
+            logger = Logger.getLogger("logging.handler");
+            logger.addHandler(handler);
+        }
         logger.info(message);
     }
 
     public static void logException(Exception ex) {
-        LoggerService.logMessage(ex.getMessage());
-        LoggerService.logMessage(getPrintStacktrace(ex));
+        logMessage(ex.getMessage());
+        logMessage(getPrintStacktrace(ex));
     }
 
     private static String getPrintStacktrace(Exception ex) {

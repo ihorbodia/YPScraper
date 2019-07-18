@@ -78,12 +78,8 @@ public class FilesService {
     }
 
     public void removeOldFileIfExists() {
-        if (getOutputFolder() != null) {
-            try {
-                Files.deleteIfExists(outputFolder.toPath());
-            } catch (IOException ex) {
-                LoggerService.logException(ex);
-            }
+        if (getOutputFolder() != null && getOutputFolder().exists()) {
+            outputFolder.delete();
         }
     }
 
