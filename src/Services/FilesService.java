@@ -1,6 +1,7 @@
 package Services;
 
 import Logic.ScrapedItem;
+import com.opencsv.CSVWriter;
 
 import javax.swing.*;
 import java.io.*;
@@ -10,9 +11,9 @@ import java.util.ArrayList;
 public class FilesService {
 
     private File outputFolder;
+    private File outputFile;
     private File inputLocationsFile;
     private String separator = File.separator;
-    private String[] postalCodes = null;
 
     FilesService() {
 
@@ -22,7 +23,6 @@ public class FilesService {
         try {
             StringBuilder sb = new StringBuilder();
             for (ScrapedItem item : items) {
-                sb.setLength(0);
                 sb.append(item.Link);
                 sb.append(',');
                 sb.append("\"").append(item.Name).append("\"");
@@ -32,7 +32,7 @@ public class FilesService {
                 sb.append("\"").append(item.Location).append("\"");
                 sb.append('\n');
             }
-            FileWriter writer = new FileWriter(outputFolder, true);
+            FileWriter writer = new FileWriter(outputFile, true);
             writer.append(sb.toString());
             writer.flush();
             writer.close();
@@ -43,9 +43,9 @@ public class FilesService {
 
     public ArrayList<String> getPostalCodes() {
         BufferedReader br = null;
-        String line = "";
+        String line;
         String cvsSplitBy = ",";
-        ArrayList<String> result = new ArrayList<String>();
+        ArrayList<String> result = new ArrayList<>();
         try {
             br = new BufferedReader(new FileReader(inputLocationsFile));
             boolean header = true;
@@ -78,34 +78,22 @@ public class FilesService {
     }
 
     public void removeOldFileIfExists() {
-        if (getOutputFolder() != null && getOutputFolder().exists()) {
-            outputFolder.delete();
+        if (outputFile != null && getOutputFolder().exists()) {
+            outputFile.delete();
         }
     }
 
-    public void createEmptyOutputFile(String business, String location) {
-        StringBuilder sb = new StringBuilder();
-        Path path = null;
-
-        if (location.equalsIgnoreCase("")) {
-            path = Paths.get(outputFolder.getAbsolutePath() + separator + business + ".csv");
-        } else {
-            path = Paths.get(outputFolder.getAbsolutePath() + separator + business + "_" + location + ".csv");
-        }
-
-        sb.append("Link");
-        sb.append(',');
-        sb.append("\"Name\"");
-        sb.append(',');
-        sb.append("\"Address\"");
-        sb.append(',');
-        sb.append("\"Location\"");
-        sb.append('\n');
+    public void createEmptyCSVFile(String[] columns, String fileName) {
+        outputFile = new File(outputFolder.getAbsolutePath() +separator+ fileName + ".csv");
+        FileWriter mFileWriter;
         try {
-            Files.createDirectories(path.getParent());
-            Files.write(path, sb.toString().getBytes(), StandardOpenOption.WRITE, StandardOpenOption.CREATE);
-        } catch (IOException ex) {
-            LoggerService.logException(ex);
+            mFileWriter = new FileWriter(outputFile);
+            CSVWriter mCsvWriter = new CSVWriter(mFileWriter);
+            mCsvWriter.writeNext(columns);
+            mCsvWriter.close();
+            mFileWriter.close();
+        } catch (IOException e) {
+            LoggerService.logException(e);
         }
     }
 
@@ -113,9 +101,15 @@ public class FilesService {
         return outputFolder;
     }
 
-    public void  setOutputFolder(File folder) {
+    public void setOutputFolder(File folder) {
         if (folder != null) {
             outputFolder = folder;
+        }
+    }
+
+    public void setInputLocationsFile(File file) {
+        if (file != null) {
+            inputLocationsFile = file;
         }
     }
 

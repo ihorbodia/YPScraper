@@ -18,7 +18,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 
-public class PanelMain extends JPanel {
+class PanelMain extends JPanel {
 	
 	private static Log log = LogFactory.getLog(PanelMain.class);
 	
@@ -50,7 +50,7 @@ public class PanelMain extends JPanel {
 	/**
 	 * Create the panel.
 	 */
-	public PanelMain() {
+	private PanelMain() {
 		setBorder(new EmptyBorder(5, 5, 5, 5));
 		GridBagLayout gridBagLayout = new GridBagLayout();
 		gridBagLayout.columnWidths = new int[]{0, 0, 0, 0, 0};

@@ -3,6 +3,8 @@ package Services;
 import GUI.WindowHandler;
 import GUI.YPScraper;
 import Models.AppPropertiesModel;
+import Utils.FolderUtils;
+
 import javax.swing.*;
 import java.awt.*;
 import java.util.logging.Level;
@@ -10,22 +12,36 @@ import java.util.logging.LogRecord;
 
 public class GuiService {
 
-    private YPScraper mainWindow;
-    GuiService() {
-        mainWindow = new YPScraper();
-        mainWindow.initActions();
-        mainWindow.pack();
-        mainWindow.setSize(new Dimension(600, 210));
-        mainWindow.setResizable(false);
-        mainWindow.setVisible(true);
-        WindowHandler h = WindowHandler.getInstance();
-        LogRecord r = new LogRecord(Level.WARNING, "Start logger...");
-        h.publish(r);
+    private static YPScraper mainWindow;
+
+    public YPScraper getMainWindow() {
+        return mainWindow;
     }
 
+    GuiService() {
+        if (mainWindow == null) {
+            mainWindow = new YPScraper();
+            mainWindow.initActions();
+            mainWindow.pack();
+            mainWindow.setSize(new Dimension(600, 210));
+            mainWindow.setResizable(false);
+            mainWindow.setVisible(true);
+            WindowHandler h = WindowHandler.getInstance();
+            LogRecord r = new LogRecord(Level.WARNING, "Start logger...");
+            h.publish(r);
+        }
+    }
 
-    public FileDialog getDialog() {
-        return new FileDialog(mainWindow, "Select File to Open");
+    public void updateStatusTextByFileProcessing(int percent) {
+        getTextFieldStatus().setText("Processed "+ percent + " % of locations from file");
+    }
+
+    public void updateStatusTextBySingleSearch(int currentPage) {
+        getTextFieldStatus().setText("Processed "+currentPage+"/50 pages");
+    }
+
+    public String getDialog() {
+        return FolderUtils.selectFolderDialog(mainWindow);
     }
 
     public void guiRestoreByProperties(AppPropertiesModel appPropertiesModel) {
@@ -33,34 +49,6 @@ public class GuiService {
         mainWindow.getTextFieldLocation().setText(appPropertiesModel.province);
         mainWindow.getlblOutputPathData().setText(appPropertiesModel.outputFolder.getName());
         mainWindow.getlblPostalCodesPathData().setText(appPropertiesModel.inputLocationsFile.getName());
-    }
-
-    public void updateOneLocationSearchGUI(boolean isFinished, String scrapedItemsCount) {
-        if (!SwingUtilities.isEventDispatchThread()) {
-            SwingUtilities.invokeLater(() -> {
-                if (isFinished) {
-                    mainWindow.getTextFieldStatus().setText("Finished. "+scrapedItemsCount + " items scraped.");
-                }
-                else
-                {
-                    mainWindow.getTextFieldStatus().setText(scrapedItemsCount + " items scraped.");
-                }
-            });
-        }
-    }
-
-    public void updateMultipleSearchGUI(boolean isFinished, final int postalCodeIndex, int postalCodesLength, int scrapedItemsCount) {
-        if (!SwingUtilities.isEventDispatchThread()) {
-            SwingUtilities.invokeLater(() -> {
-                if (postalCodeIndex <= postalCodesLength) {
-                    int postalCodeItem = postalCodeIndex + 1;
-                    mainWindow.getTextFieldStatus().setText(postalCodeItem + "/" + postalCodesLength + " locations processed. " + scrapedItemsCount + " items scraped.");
-                }
-                if (isFinished) {
-                    mainWindow.getTextFieldStatus().setText("Finished. " + (postalCodeIndex - 1)  + "/" + postalCodesLength + " locations processed. " + scrapedItemsCount + " items scraped.");
-                }
-            });
-        }
     }
 
     public void changeApplicationState(boolean isWork) {

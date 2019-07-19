@@ -1,5 +1,7 @@
 package Services;
 
+import Logic.SearchStrategies.BaseSearchStrategy;
+
 public class DIResolver {
 
     private static GuiService guiService;
@@ -7,8 +9,19 @@ public class DIResolver {
     private static FilesService filesService;
     private static LoggerService loggerService;
 
+    private static BaseSearchStrategy baseSearchStrategy;
+
     public DIResolver() {
     }
+
+    public BaseSearchStrategy getBaseSearchStrategy() {
+        return baseSearchStrategy;
+    }
+
+    public void setBaseSearchStrategy(BaseSearchStrategy baseSearchStrategy) {
+        DIResolver.baseSearchStrategy = baseSearchStrategy;
+    }
+
 
     public FilesService getFilesService() {
         if (filesService == null) {

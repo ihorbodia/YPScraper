@@ -20,7 +20,7 @@ public class LoggerService {
             logger = Logger.getLogger("logging.handler");
             logger.addHandler(handler);
         }
-        logger.info(message);
+        logger.info(message+ "\r\n");
     }
 
     public static void logException(Exception ex) {

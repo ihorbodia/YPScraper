@@ -49,10 +49,10 @@ public class PropertiesService {
     }
 
 
-    public void saveLocationsFileLocation(File locationsFile) {
+    private synchronized void saveProperty(String property, String data) {
         try {
-        output = new FileOutputStream(propertiesFile.getAbsoluteFile());
-            properties.setProperty("csvPostalCodesFile", locationsFile.getAbsolutePath());
+            output = new FileOutputStream(propertiesFile.getAbsoluteFile());
+            properties.setProperty(property, data);
             properties.store(output, null);
         } catch (IOException io) {
             LoggerService.logException(io);
@@ -65,6 +65,26 @@ public class PropertiesService {
                 }
             }
         }
+    }
+
+    public void saveLocation(String location) {
+        saveProperty("province", location);
+    }
+
+    public void saveBusiness(String business) {
+        saveProperty("business", business);
+    }
+
+    public void saveWorkState(boolean workState) {
+        saveProperty("running", String.valueOf(workState));
+    }
+
+    public void saveOutputFolder(File outputFolder) {
+        saveProperty("outputFolder", outputFolder.getAbsolutePath());
+    }
+
+    public void saveLocationsFileLocation(File locationsFile) {
+        saveProperty("csvPostalCodesFile", locationsFile.getAbsolutePath());
     }
 
     public void saveProperties(AppPropertiesModel appPropertiesModel, boolean isMultipleSearch) {

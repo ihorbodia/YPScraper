@@ -1,14 +1,12 @@
 package Actions;
 
 import Services.DIResolver;
-import Utils.FolderUtils;
-
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
 
 public class SetOutputPathAction implements ActionListener {
-    DIResolver diResolver;
+    private DIResolver diResolver;
     public SetOutputPathAction() {
         this.diResolver = new DIResolver();
     }
@@ -17,10 +15,11 @@ public class SetOutputPathAction implements ActionListener {
     public void actionPerformed(ActionEvent e) {
         System.out.println("SetOutputAction");
 
-        String path = diResolver.getGuiService().getDialog().getDirectory();
+        String path = diResolver.getGuiService().getDialog();
         if (!path.equalsIgnoreCase("")) {
             File outputFolder = new File(path);
             diResolver.getGuiService().getlblOutputPathData().setText(outputFolder.getName());
+            diResolver.getPropertiesService().saveOutputFolder(outputFolder);
         }
     }
 }

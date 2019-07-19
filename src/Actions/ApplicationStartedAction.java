@@ -1,10 +1,7 @@
 package Actions;
 
 import Models.AppPropertiesModel;
-import Services.DIResolver;
-import Services.FilesService;
-import Services.GuiService;
-import Services.PropertiesService;
+import Services.*;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -20,24 +17,40 @@ public class ApplicationStartedAction implements ActionListener {
 
     @Override
     public void actionPerformed(ActionEvent e) {
-        FilesService filesService = diResolver.getFilesService();
         GuiService guiService = diResolver.getGuiService();
         PropertiesService propertiesService = diResolver.getPropertiesService();
 
         AppPropertiesModel appPropertiesModel = propertiesService.restoreProperties();
         guiService.guiRestoreByProperties(appPropertiesModel);
 
-        if(filesService.getOutputFolder() == null) {
-            File f = new File(".");
-            filesService.setOutputFolder(new File(f.getAbsolutePath()).getParentFile());
-            guiService.getlblOutputPathData().setText(filesService.getOutputFolder().getName());
-        }
+        InitOutputFolder(appPropertiesModel);
+        InitLocationsInputFile(appPropertiesModel);
 
         if (appPropertiesModel.running) {
             StartAction startAction = new StartAction();
             startAction.actionPerformed(new ActionEvent(this, ActionEvent.ACTION_PERFORMED, null));
         }
+    }
 
+    private void InitLocationsInputFile(AppPropertiesModel appPropertiesModel) {
+        if(appPropertiesModel.inputLocationsFile.exists()) {
+            diResolver.getFilesService().setInputLocationsFile(appPropertiesModel.inputLocationsFile);
+        } else {
+            LoggerService.logMessage("Select locations file please");
 
+        }
+        File inputFile = diResolver.getFilesService().getInputLocationsFile();
+        diResolver.getGuiService().getlblPostalCodesPathData().setText(inputFile == null ? "" : inputFile.getName());
+    }
+
+    private void InitOutputFolder(AppPropertiesModel appPropertiesModel) {
+        if(diResolver.getFilesService().getOutputFolder() == null && !appPropertiesModel.outputFolder.exists()) {
+            File f = new File(".");
+            diResolver.getFilesService().setOutputFolder(new File(f.getAbsolutePath()).getParentFile());
+        } else {
+            diResolver.getFilesService().setOutputFolder(appPropertiesModel.outputFolder);
+        }
+        File outputFolder = diResolver.getFilesService().getOutputFolder();
+        diResolver.getGuiService().getlblOutputPathData().setText(outputFolder == null ? "" :outputFolder.getName());
     }
 }

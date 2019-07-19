@@ -27,9 +27,8 @@
         <SOURCES />
       </library>
     </orderEntry>
-    <orderEntry type="library" name="commons-logging-1.2" level="project" />
-    <orderEntry type="library" name="commons-logging-1.2-javadoc" level="project" />
     <orderEntry type="library" name="org.jsoup:jsoup:1.12.1" level="project" />
     <orderEntry type="library" name="org.apache.directory.studio:org.apache.commons.io:2.4" level="project" />
+    <orderEntry type="library" name="com.opencsv:opencsv:4.6" level="project" />
   </component>
 </module>

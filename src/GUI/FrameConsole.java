@@ -7,7 +7,7 @@ import java.awt.event.WindowEvent;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 
-public class FrameConsole extends JFrame {
+class FrameConsole extends JFrame {
 
 	private JPanel contentPane;
 
@@ -30,7 +30,7 @@ public class FrameConsole extends JFrame {
 	/**
 	 * Create the frame.
 	 */
-	public FrameConsole() {
+	private FrameConsole() {
 		setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
 		addWindowListener(new WindowAdapter(){
 			@Override

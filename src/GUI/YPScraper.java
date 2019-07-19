@@ -53,7 +53,7 @@ public class YPScraper extends JFrame {
 
 
     public YPScraper() {
-        setTitle("YP Crawler CA v1.8");
+        setTitle("YP Crawler CA v2");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setBounds(100, 100, 450, 300);
         add(PanelMain());
