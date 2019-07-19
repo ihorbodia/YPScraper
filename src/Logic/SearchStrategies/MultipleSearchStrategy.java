@@ -3,6 +3,9 @@ package Logic.SearchStrategies;
 import Models.AppPropertiesModel;
 import Models.Worker;
 import Services.DIResolver;
+
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -23,11 +26,13 @@ public class MultipleSearchStrategy extends BaseSearchStrategy {
             diResolver.getPropertiesService().saveBusiness(business);
 
             executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(50);
+            int taskCount = 0;
             for (String item : csvFileData) {
                 Runnable task = new Worker(diResolver, business, item);
                 executor.execute(task);
+                taskCount++;
             }
-            waitForTheEnd(csvFileData.size());
+            waitForTheEnd(taskCount);
         });
     }
 
@@ -40,6 +45,15 @@ public class MultipleSearchStrategy extends BaseSearchStrategy {
 
     @Override
     public void updateStatusText(double onePercent) {
-        diResolver.getGuiService().updateStatusTextByFileProcessing((int)(executor.getCompletedTaskCount() / onePercent));
+        double val = ((double)executor.getCompletedTaskCount() / onePercent);
+        diResolver.getGuiService().updateStatusTextByFileProcessing(round(val, 2));
+    }
+
+    private double round(double value, int places) {
+        if (places < 0) throw new IllegalArgumentException();
+
+        BigDecimal bd = new BigDecimal(value);
+        bd = bd.setScale(places, RoundingMode.HALF_UP);
+        return bd.doubleValue();
     }
 }

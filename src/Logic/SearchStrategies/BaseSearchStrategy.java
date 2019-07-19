@@ -25,12 +25,12 @@ public abstract class BaseSearchStrategy {
         LoggerService.logMessage("Stop command");
     }
 
-    void waitForTheEnd(int csvFileSize) {
+    void waitForTheEnd(int taskCount) {
         Thread thread = new Thread(() -> {
-            double onePercent = csvFileSize / 100.0;
+            double onePercent = taskCount / 100.0;
             diResolver.getGuiService().changeApplicationState(true);
             while (true) {
-                if (executor.getPoolSize() == executor.getCompletedTaskCount()) {
+                if (taskCount == executor.getCompletedTaskCount()) {
                     executor.shutdownNow();
                 }
                 if (executor.isTerminated()) {

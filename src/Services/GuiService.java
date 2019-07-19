@@ -32,7 +32,7 @@ public class GuiService {
         }
     }
 
-    public void updateStatusTextByFileProcessing(int percent) {
+    public void updateStatusTextByFileProcessing(double percent) {
         getTextFieldStatus().setText("Processed "+ percent + " % of locations from file");
     }
 
