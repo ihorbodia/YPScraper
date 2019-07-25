@@ -44,9 +44,9 @@ public class Worker implements Runnable {
     private synchronized void addItemsToStorage(ArrayList<ScrapedItem> items) {
         for (ScrapedItem item: items) {
             if (storage.stream().noneMatch(x ->
-                    x.Address.equalsIgnoreCase(item.Address) &&
-                    x.Link.equalsIgnoreCase(item.Link) &&
-                    x.Location.equalsIgnoreCase(item.Location) &&
+                    x.Address.equalsIgnoreCase(item.Address) ||
+                    x.Link.equalsIgnoreCase(item.Link) ||
+                    x.Location.equalsIgnoreCase(item.Location) ||
                     x.Name.equalsIgnoreCase(item.Name))) {
                 storage.add(item);
             }
