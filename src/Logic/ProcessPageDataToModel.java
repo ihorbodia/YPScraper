@@ -27,7 +27,7 @@ public class ProcessPageDataToModel {
         for (Element el : els) {
             String title = el.select("h3.listing__name").select("a.listing__link").text();
             String link = processLink(el.select("li.mlr__item--website").select("a").attr("href"));
-            String address = el.select("div.listing__address").text();
+            String address = el.select("div.listing__address").select("span").text();
             storage.add(new ScrapedItem(title, address.replace("Get directions", ""), processLink(link), province));
         }
         return storage;

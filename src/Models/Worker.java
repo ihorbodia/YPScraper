@@ -46,7 +46,6 @@ public class Worker implements Runnable {
             if (storage.stream().noneMatch(x ->
                     x.Address.equalsIgnoreCase(item.Address) ||
                     x.Link.equalsIgnoreCase(item.Link) ||
-                    x.Location.equalsIgnoreCase(item.Location) ||
                     x.Name.equalsIgnoreCase(item.Name))) {
                 storage.add(item);
             }

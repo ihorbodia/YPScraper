@@ -84,15 +84,19 @@ public class FilesService {
     }
 
     public void createEmptyCSVFile(String[] columns, String fileName) {
-        outputFile = new File(outputFolder.getAbsolutePath() +separator+ fileName + ".csv");
-        FileWriter mFileWriter;
         try {
+            if (outputFolder == null) {
+                LoggerService.logMessage("Output folder not specified!");
+                return;
+            }
+            outputFile = new File(outputFolder.getAbsolutePath() +separator+ fileName + ".csv");
+            FileWriter mFileWriter;
             mFileWriter = new FileWriter(outputFile);
             CSVWriter mCsvWriter = new CSVWriter(mFileWriter);
             mCsvWriter.writeNext(columns);
             mCsvWriter.close();
             mFileWriter.close();
-        } catch (IOException e) {
+        } catch (Exception e) {
             LoggerService.logException(e);
         }
     }
